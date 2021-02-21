@@ -18,11 +18,11 @@ Step 3: run the command: "./gradlew eclipse"
 Step 4: Import project
 
 Step 5: Create a system variable called "JAVA_MC_HOME" with the location of the JDK 1.8.0_251 (This is needed for gradle to work correctly)
-		And make sure it is used in the build.gradle file.
+		And make sure it is used in the gradle.bat file.
 
 Step 6: Import the lodcore and lodcore_source jar files into the referenced libraries.
 
-Step 6: Make sure the eclipse has the JDK 1.8.0_251 installed. (This is needed so that eclipse can run minecraft)
+Step 7: Make sure the eclipse has the JDK 1.8.0_251 installed. (This is needed so that eclipse can run minecraft)
 
 
 Other commands: 
