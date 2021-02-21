@@ -25,7 +25,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
  * This is used by the client.
  * 
  * @author James_Seibel
- * @version 01-31-2021
+ * @version 02-21-2021
  */
 public class ClientProxy extends CommonProxy
 {
