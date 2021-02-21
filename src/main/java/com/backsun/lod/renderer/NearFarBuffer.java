@@ -1,6 +1,6 @@
 package com.backsun.lod.renderer;
 
-import java.nio.ByteBuffer;
+import net.minecraft.client.renderer.BufferBuilder;
 
 /**
  * This object is just a replacement for an array
@@ -8,16 +8,16 @@ import java.nio.ByteBuffer;
  * and BuildBufferThread.
  * 
  * @author James Seibel
- * @version 02-13-2021
+ * @version 02-21-2021
  */
 public class NearFarBuffer
 {
-	public ByteBuffer nearBuffer;
+	public BufferBuilder nearBuffer;
 	
-	public ByteBuffer farBuffer;
+	public BufferBuilder farBuffer;
 	
 	
-	NearFarBuffer(ByteBuffer newNearBuffer, ByteBuffer newFarBuffer)
+	NearFarBuffer(BufferBuilder newNearBuffer, BufferBuilder newFarBuffer)
 	{
 		nearBuffer = newNearBuffer;
 		farBuffer = newFarBuffer;
