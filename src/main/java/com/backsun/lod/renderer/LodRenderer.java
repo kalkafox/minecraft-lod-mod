@@ -15,10 +15,11 @@ import java.util.concurrent.Future;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.Project;
 
+import com.backsun.lod.handlers.ReflectionHandler;
 import com.backsun.lod.objects.LodChunk;
 import com.backsun.lod.objects.LodDimension;
+import com.backsun.lod.objects.NearFarBuffer;
 import com.backsun.lod.util.LodConfig;
-import com.backsun.lod.util.ReflectionHandler;
 import com.backsun.lod.util.enums.ColorDirection;
 import com.backsun.lod.util.enums.FogDistance;
 import com.backsun.lod.util.enums.FogQuality;
@@ -94,6 +95,9 @@ public class LodRenderer
 	
 	
 	
+	
+	
+	
 	public LodRenderer()
 	{
 		mc = Minecraft.getMinecraft();
@@ -104,6 +108,9 @@ public class LodRenderer
 		
 		reflectionHandler = new ReflectionHandler();
 	}
+	
+	
+	
 	
 	
 	
@@ -323,25 +330,6 @@ public class LodRenderer
 		// end of profiler tracking
 		mc.mcProfiler.endSection();
 	}
-
-
-
-	
-
-
-
-
-
-
-
-
-
-	
-	
-
-
-
-	
 	
 	
 	
@@ -406,9 +394,6 @@ public class LodRenderer
 	{
 		for(int i = 0; i < numbBufferThreads; i++)
 		{
-			if (buffers[i] == null || buffers[i].getByteBuffer() == null)
-				continue;
-			
 			int pos = bufferBuilder.getByteBuffer().position();
 			buffers[i].getByteBuffer().position(pos);
 			
@@ -444,7 +429,7 @@ public class LodRenderer
 		
 		if(fogDistance == FogDistance.NEAR_AND_FAR)
 		{
-			throw new IllegalArgumentException("setupFog only accepts NEAR or FAR fog distances.");
+			throw new IllegalArgumentException("setupFog doesn't accept the NEAR_AND_FAR fog distance.");
 		}
 
 		// the multipliers are percentages
@@ -581,7 +566,7 @@ public class LodRenderer
 	/**
 	 * Returns -1 if there are no valid points
 	 */
-	private int getLodHeightPoint(short[] heightPoints)
+	private int getHighestPointInLod(short[] heightPoints)
 	{
 		if (heightPoints[LodLocation.NE.value] != -1)
 			return heightPoints[LodLocation.NE.value];
@@ -611,7 +596,7 @@ public class LodRenderer
 		// just using (int) camera doesn't work
 		int playerXChunkOffset = ((int) cameraX / LodChunk.WIDTH) * LodChunk.WIDTH;
 		int playerZChunkOffset = ((int) cameraZ / LodChunk.WIDTH) * LodChunk.WIDTH;
-		// this where we will start drawing squares
+		// this is where we will start drawing squares
 		// (exactly half the total width)
 		int startX = (-LodChunk.WIDTH * (numbChunksWide / 2)) + playerXChunkOffset;
 		int startZ = (-LodChunk.WIDTH * (numbChunksWide / 2)) + playerZChunkOffset;
@@ -648,8 +633,9 @@ public class LodRenderer
 					LodChunk lod = lodDimension.getLodFromCoordinates(chunkX, chunkZ);
 					if (lod == null)
 					{
-						// note: for some reason if any color or lod object are set here
-						// it causes the game to use 100% gpu, all of it undefined in the debug menu
+						// note: for some reason if any color or lod objects are set here
+						// it causes the game to use 100% gpu; 
+						// undefined in the debug menu
 						// and drop to ~6 fps.
 						colorArray[i][j] = null;
 						lodArray[i][j] = null;
@@ -686,8 +672,8 @@ public class LodRenderer
 					
 					
 					// add the new box to the array
-					int topPoint = getLodHeightPoint(lod.top);
-					int bottomPoint = getLodHeightPoint(lod.bottom);
+					int topPoint = getHighestPointInLod(lod.top);
+					int bottomPoint = getHighestPointInLod(lod.bottom);
 					
 					// don't draw an LOD if it is empty
 					if (topPoint == -1 && bottomPoint == -1)

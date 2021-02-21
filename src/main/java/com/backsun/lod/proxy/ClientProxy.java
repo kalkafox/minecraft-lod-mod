@@ -5,13 +5,13 @@ import java.util.concurrent.Executors;
 
 import org.lwjgl.opengl.GL11;
 
+import com.backsun.lod.handlers.LodFileHandler;
 import com.backsun.lod.objects.LodChunk;
 import com.backsun.lod.objects.LodDimension;
 import com.backsun.lod.objects.LodRegion;
 import com.backsun.lod.objects.LodWorld;
 import com.backsun.lod.renderer.LodRenderer;
 import com.backsun.lod.util.LodConfig;
-import com.backsun.lod.util.LodFileHandler;
 import com.backsun.lodCore.util.RenderGlobalHook;
 
 import net.minecraft.client.Minecraft;

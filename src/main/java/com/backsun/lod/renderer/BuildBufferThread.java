@@ -4,6 +4,7 @@ import java.util.concurrent.Callable;
 
 import org.lwjgl.opengl.GL11;
 
+import com.backsun.lod.objects.NearFarBuffer;
 import com.backsun.lod.util.enums.FogDistance;
 
 import net.minecraft.client.renderer.BufferBuilder;

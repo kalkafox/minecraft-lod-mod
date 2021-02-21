@@ -1,4 +1,4 @@
-package com.backsun.lod.renderer;
+package com.backsun.lod.objects;
 
 import net.minecraft.client.renderer.BufferBuilder;
 
@@ -17,7 +17,7 @@ public class NearFarBuffer
 	public BufferBuilder farBuffer;
 	
 	
-	NearFarBuffer(BufferBuilder newNearBuffer, BufferBuilder newFarBuffer)
+	public NearFarBuffer(BufferBuilder newNearBuffer, BufferBuilder newFarBuffer)
 	{
 		nearBuffer = newNearBuffer;
 		farBuffer = newFarBuffer;

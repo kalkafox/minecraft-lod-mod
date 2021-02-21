@@ -1,6 +1,6 @@
 package com.backsun.lod.objects;
 
-import com.backsun.lod.util.LodFileHandler;
+import com.backsun.lod.handlers.LodFileHandler;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.DimensionType;
