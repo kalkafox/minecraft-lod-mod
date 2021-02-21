@@ -1,10 +1,11 @@
-package com.backsun.lod.renderer;
+package com.backsun.lod.builders;
 import java.awt.Color;
 import java.util.concurrent.Callable;
 
 import org.lwjgl.opengl.GL11;
 
 import com.backsun.lod.objects.NearFarBuffer;
+import com.backsun.lod.renderer.RenderUtil;
 import com.backsun.lod.util.enums.FogDistance;
 
 import net.minecraft.client.renderer.BufferBuilder;
@@ -30,12 +31,12 @@ public class BuildBufferThread implements Callable<NearFarBuffer>
 	
 	
 	
-	BuildBufferThread()
+	public BuildBufferThread()
 	{
 		
 	}
 	
-	BuildBufferThread(BufferBuilder newNearBufferBuilder, BufferBuilder newFarBufferBuilder, AxisAlignedBB[][] newLods, Color[][] newColors, FogDistance newDistanceMode, int threadNumber, int totalThreads)
+	public BuildBufferThread(BufferBuilder newNearBufferBuilder, BufferBuilder newFarBufferBuilder, AxisAlignedBB[][] newLods, Color[][] newColors, FogDistance newDistanceMode, int threadNumber, int totalThreads)
 	{
 		setNewData(newNearBufferBuilder, newFarBufferBuilder, distanceMode, newLods, newColors, threadNumber, totalThreads);
 	}

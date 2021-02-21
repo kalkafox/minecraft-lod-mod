@@ -1,11 +1,8 @@
 package com.backsun.lod.proxy;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.lwjgl.opengl.GL11;
 
-import com.backsun.lod.handlers.LodFileHandler;
+import com.backsun.lod.builders.LodBuilder;
 import com.backsun.lod.objects.LodChunk;
 import com.backsun.lod.objects.LodDimension;
 import com.backsun.lod.objects.LodRegion;
@@ -16,10 +13,6 @@ import com.backsun.lodCore.util.RenderGlobalHook;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
-import net.minecraft.world.DimensionType;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.event.terraingen.PopulateChunkEvent;
 import net.minecraftforge.event.world.ChunkEvent;
@@ -38,14 +31,11 @@ public class ClientProxy extends CommonProxy
 {
 	private LodRenderer renderer;
 	private LodWorld lodWorld;
-	private ExecutorService lodGenThreadPool = Executors.newFixedThreadPool(1);
-	
-	/** Default size of any LOD regions we use */
-	private int regionWidth = 5;
+	private LodBuilder lodBuilder;
 	
 	public ClientProxy()
 	{
-		
+		lodBuilder = new LodBuilder();
 	}
 	
 	
@@ -70,10 +60,10 @@ public class ClientProxy extends CommonProxy
 	public void renderLods(float partialTicks)
 	{
 		int newWidth = Math.max(4, (Minecraft.getMinecraft().gameSettings.renderDistanceChunks * LodChunk.WIDTH * 2) / LodRegion.SIZE);
-		if (lodWorld != null && regionWidth != newWidth)
+		if (lodWorld != null && lodBuilder.regionWidth != newWidth)
 		{
 			lodWorld.resizeDimensionRegionWidth(newWidth);
-			regionWidth = newWidth;
+			lodBuilder.regionWidth = newWidth;
 			
 			// skip this frame, hopefully the lodWorld
 			// should have everything set up by then
@@ -101,7 +91,6 @@ public class ClientProxy extends CommonProxy
 			lodDim.move(xOffset, zOffset);
 		}
 		
-		
 		// we wait to create the renderer until the first frame
 		// to make sure that the EntityRenderer has
 		// been created, that way we can get the fovModifer
@@ -120,9 +109,6 @@ public class ClientProxy extends CommonProxy
 	
 	
 	
-	
-	
-	
 	//===============//
 	// update events //
 	//===============//
@@ -130,7 +116,7 @@ public class ClientProxy extends CommonProxy
 	@SubscribeEvent
 	public void chunkLoadEvent(ChunkEvent event)
 	{
-		generateLodChunk(event.getChunk());
+		lodWorld = lodBuilder.generateLodChunk(event.getChunk());
 	}
 	
 	/**
@@ -146,111 +132,12 @@ public class ClientProxy extends CommonProxy
 			
 			if(world != null)
 			{
-				generateLodChunk(world.getChunkFromChunkCoords(event.getChunkX(), event.getChunkZ()));
+				lodWorld = lodBuilder.generateLodChunk(world.getChunkFromChunkCoords(event.getChunkX(), event.getChunkZ()));
 			}
 		}
 	}
 	
-	/*
-	 * 
-	Use this for generating chunks and maybe determining if they are loaded at all?
 	
-	Could I create my own chunk generator and multithread it? It wouldn't save to the world, but could I save it for LODs?
-	
- 	chunk = Minecraft.getMinecraft().getIntegratedServer().getWorld(0).getChunkProvider().chunkGenerator.generateChunk(chunk.x, chunk.z);
-	
-	System.out.println(chunk.x + " " + chunk.z + "\tloaded: " + chunk.isLoaded() + "\tpop: " + chunk.isPopulated() + "\tter pop: " + chunk.isTerrainPopulated());
-	 */
-	
-	private void generateLodChunk(Chunk chunk)
-	{
-		Minecraft mc = Minecraft.getMinecraft();
-		
-		// don't try to create an LOD object
-		// if for some reason we aren't
-		// given a valid chunk object
-		// (Minecraft often gives back empty
-		// or null chunks in this method)
-		if (chunk == null || !isValidChunk(chunk))
-			return;
-		
-		int dimId = chunk.getWorld().provider.getDimension();
-		World world = mc.getIntegratedServer().getWorld(dimId);
-		
-		if (world == null)
-			return;
-			
-		Thread thread = new Thread(() ->
-		{
-			try
-			{
-				LodChunk lod = new LodChunk(chunk, world);
-				LodDimension lodDim;
-				
-				if (lodWorld == null)
-				{
-					lodWorld = new LodWorld(LodFileHandler.getWorldName());
-				}
-				else
-				{
-					// if we have a lodWorld make sure 
-					// it is for this minecraft world
-					if (!lodWorld.worldName.equals(LodFileHandler.getWorldName()))
-					{
-						// this lodWorld isn't for this minecraft world
-						// delete it so we can get a new one
-						lodWorld = null;
-						
-						// skip this frame
-						// we'll get this set up next time
-						return;
-					}
-				}
-				
-				
-				if (lodWorld.getLodDimension(dimId) == null)
-				{
-					DimensionType dim = DimensionType.getById(dimId);
-					lodDim = new LodDimension(dim, regionWidth);
-					lodWorld.addLodDimension(lodDim);
-				}
-				else
-				{
-					lodDim = lodWorld.getLodDimension(dimId);
-				}
-				
-				lodDim.addLod(lod);
-			}
-			catch(IllegalArgumentException | NullPointerException e)
-			{
-				// if the world changes while LODs are being generated
-				// they will throw errors as they try to access things that no longer
-				// exist.
-			}
-			
-		});
-		
-		lodGenThreadPool.execute(thread);
-	}
-	
-	/**
-	 * Return whether the given chunk
-	 * has any data in it.
-	 */
-	private boolean isValidChunk(Chunk chunk)
-	{
-		ExtendedBlockStorage[] data = chunk.getBlockStorageArray();
-		
-		for(ExtendedBlockStorage e : data)
-		{
-			if(e != null && !e.isEmpty())
-			{
-				return true;
-			}
-		}
-		
-		return false;
-	}
 	
 	
 }

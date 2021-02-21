@@ -15,6 +15,7 @@ import java.util.concurrent.Future;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.Project;
 
+import com.backsun.lod.builders.BuildBufferThread;
 import com.backsun.lod.handlers.ReflectionHandler;
 import com.backsun.lod.objects.LodChunk;
 import com.backsun.lod.objects.LodDimension;
@@ -108,9 +109,6 @@ public class LodRenderer
 		
 		reflectionHandler = new ReflectionHandler();
 	}
-	
-	
-	
 	
 	
 	
