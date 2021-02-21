@@ -90,6 +90,7 @@ public class LodRenderer
 	/** if this is true the LODs should be regenerated */
 	private boolean regen = false;
 	
+	private volatile boolean regenerating = false;
 	
 	
 	
@@ -104,6 +105,7 @@ public class LodRenderer
 		reflectionHandler = new ReflectionHandler();
 	}
 	
+	private ExecutorService genThread = Executors.newSingleThreadExecutor();
 	
 	
 	public void drawLODs(LodDimension newDimension, float partialTicks)
@@ -216,11 +218,6 @@ public class LodRenderer
 		int startZ = (-LodChunk.WIDTH * (numbChunksWide / 2)) + playerZChunkOffset;
 		
 		
-		// this is where we store the LOD objects
-		AxisAlignedBB lodArray[][] = new AxisAlignedBB[numbChunksWide][numbChunksWide];
-		// this is where we store the color for each LOD object
-		Color colorArray[][] = new Color[numbChunksWide][numbChunksWide];
-		
 		
 		
 		
@@ -229,87 +226,103 @@ public class LodRenderer
 		// create the LODs //
 		//=================//
 		
-		if (regen)
+		if (regen && !regenerating)
 		{
 			mc.mcProfiler.endStartSection("LOD generation");
+			regenerating = true;
 			
-			// x axis
-			for (int i = 0; i < numbChunksWide; i++)
+			// this is where we store the LOD objects
+			AxisAlignedBB lodArray[][] = new AxisAlignedBB[numbChunksWide][numbChunksWide];
+			// this is where we store the color for each LOD object
+			Color colorArray[][] = new Color[numbChunksWide][numbChunksWide];
+			
+			setupBufferThreads(lodArray);
+			
+			Thread t = new Thread(()->
 			{
-				// z axis
-				for (int j = 0; j < numbChunksWide; j++)
+				// x axis
+				for (int i = 0; i < numbChunksWide; i++)
 				{
-					// skip the middle
-					// (As the player moves some chunks will overlap or be missing,
-					// this is just how chunk loading/unloading works. This can hopefully
-					// be hidden with careful use of fog)
-					int middle = (numbChunksWide / 2);
-					if (RenderUtil.isCoordinateInLoadedArea(i, j, middle))
+					// z axis
+					for (int j = 0; j < numbChunksWide; j++)
 					{
-						continue;
-					}
-					
-					
-					// set where this square will be drawn in the world
-					double xOffset = (LodChunk.WIDTH * i) + // offset by the number of LOD blocks
-									startX; // offset so the center LOD block is centered underneath the player
-					double yOffset = 0;
-					double zOffset = (LodChunk.WIDTH * j) + startZ;
-					
-					int chunkX = i + (startX / LodChunk.WIDTH);
-					int chunkZ = j + (startZ / LodChunk.WIDTH);
-					
-					LodChunk lod = lodDimension.getLodFromCoordinates(chunkX, chunkZ); // new LodChunk(); //   
-					if (lod == null)
-					{
-						// note: for some reason if any color or lod object are set here
-						// it causes the game to use 100% gpu, all of it undefined in the debug menu
-						// and drop to ~6 fps.
-//						colorArray[i][j] = null;
-//						lodArray[i][j] = null;
+						// skip the middle
+						// (As the player moves some chunks will overlap or be missing,
+						// this is just how chunk loading/unloading works. This can hopefully
+						// be hidden with careful use of fog)
+						int middle = (numbChunksWide / 2);
+						if (RenderUtil.isCoordinateInLoadedArea(i, j, middle))
+						{
+							continue;
+						}
 						
-						continue;
-					}
-					
-					Color c = new Color(
-							(lod.colors[ColorDirection.TOP.value].getRed()),
-							(lod.colors[ColorDirection.TOP.value].getGreen()),
-							(lod.colors[ColorDirection.TOP.value].getBlue()),
-							lod.colors[ColorDirection.TOP.value].getAlpha());
-					
-					
-					
-					if (!debugging)
-					{
-						// add the color to the array
-						colorArray[i][j] = c;
-					}
-					else
-					{
-						// if debugging draw the squares as a black and white checker board
-						if ((chunkX + chunkZ) % 2 == 0)
-							c = white;
+						
+						// set where this square will be drawn in the world
+						double xOffset = (LodChunk.WIDTH * i) + // offset by the number of LOD blocks
+										startX; // offset so the center LOD block is centered underneath the player
+						double yOffset = 0;
+						double zOffset = (LodChunk.WIDTH * j) + startZ;
+						
+						int chunkX = i + (startX / LodChunk.WIDTH);
+						int chunkZ = j + (startZ / LodChunk.WIDTH);
+						
+						LodChunk lod = lodDimension.getLodFromCoordinates(chunkX, chunkZ);
+						if (lod == null)
+						{
+							// note: for some reason if any color or lod object are set here
+							// it causes the game to use 100% gpu, all of it undefined in the debug menu
+							// and drop to ~6 fps.
+							colorArray[i][j] = null;
+							lodArray[i][j] = null;
+							
+							continue;
+						}
+						
+						Color c = new Color(
+								(lod.colors[ColorDirection.TOP.value].getRed()),
+								(lod.colors[ColorDirection.TOP.value].getGreen()),
+								(lod.colors[ColorDirection.TOP.value].getBlue()),
+								lod.colors[ColorDirection.TOP.value].getAlpha());
+						
+						
+						
+						if (!debugging)
+						{
+							// add the color to the array
+							colorArray[i][j] = c;
+						}
 						else
-							c = black;
-						// draw the first square as red
-						if (i == 0 && j == 0)
-							c = red;
+						{
+							// if debugging draw the squares as a black and white checker board
+							if ((chunkX + chunkZ) % 2 == 0)
+								c = white;
+							else
+								c = black;
+							// draw the first square as red
+							if (i == 0 && j == 0)
+								c = red;
+							
+							colorArray[i][j] = c;
+						}
 						
-						colorArray[i][j] = c;
+						
+						// add the new box to the array
+						int topPoint = getLodHeightPoint(lod.top);
+						int bottomPoint = getLodHeightPoint(lod.bottom);
+						
+						// don't draw an LOD if it is empty
+						if (topPoint == -1 && bottomPoint == -1)
+							continue;
+						
+						lodArray[i][j] = new AxisAlignedBB(0, bottomPoint, 0, LodChunk.WIDTH, topPoint, LodChunk.WIDTH).offset(xOffset, yOffset, zOffset);
 					}
-					
-					
-					// add the new box to the array
-					int topPoint = getLodHeightPoint(lod.top);
-					int bottomPoint = getLodHeightPoint(lod.bottom);
-					
-					// don't draw an LOD if it is empty
-					if (topPoint == -1 && bottomPoint == -1)
-						continue;
-					
-					lodArray[i][j] = new AxisAlignedBB(0, bottomPoint, 0, LodChunk.WIDTH, topPoint, LodChunk.WIDTH).offset(xOffset, yOffset, zOffset);
 				}
-			}
+				
+				generateLodBuffers(lodArray, colorArray, LodConfig.fogDistance);
+				regenerating = false;
+			});
+//			t.run();
+			genThread.execute(t);
 		}
 		
 		
@@ -331,7 +344,7 @@ public class LodRenderer
 		
 		setProjectionMatrix(partialTicks);
 		setupLighting(partialTicks);
-		setupBufferThreads(lodArray);
+//		setupBufferThreads(lodArray);
 		
 		
 		
@@ -342,9 +355,9 @@ public class LodRenderer
 		// rendering //
 		//===========//
 		
-		mc.mcProfiler.endStartSection("LOD build buffer");
-		if (regen)
-			generateLodBuffers(lodArray, colorArray, LodConfig.fogDistance);
+//		mc.mcProfiler.endStartSection("LOD build buffer");
+//		if (regen)
+//			generateLodBuffers(lodArray, colorArray, LodConfig.fogDistance);
 		
 		switch(LodConfig.fogDistance)
 		{
