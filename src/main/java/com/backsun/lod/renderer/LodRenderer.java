@@ -37,7 +37,7 @@ import net.minecraft.util.math.MathHelper;
 
 /**
  * @author James Seibel
- * @version 2-21-2021
+ * @version 2-22-2021
  */
 public class LodRenderer
 {
@@ -53,12 +53,6 @@ public class LodRenderer
 	
 	private Tessellator tessellator;
 	private BufferBuilder bufferBuilder;
-	
-	/**
-	 * This is an array of 0's used to clear old 
-	 * ByteBuffers when they need to be rebuilt.
-	 */
-	byte[] clearBytes;
 	
 	private ReflectionHandler reflectionHandler;
 	
@@ -219,20 +213,16 @@ public class LodRenderer
 			mc.mcProfiler.endStartSection("LOD generation");
 			regenerating = true;
 			
-			// this is where we store the LOD objects
-			AxisAlignedBB lodArray[][] = new AxisAlignedBB[numbChunksWide][numbChunksWide];
-			// this is where we store the color for each LOD object
-			Color colorArray[][] = new Color[numbChunksWide][numbChunksWide];
 			
 			if (numbBufferThreads != bufferThreads.size())
 				setupBufferThreads();
 			
 			if (drawableNearBuffers == null || drawableFarBuffers == null || 
 				previousChunkRenderDistance != mc.gameSettings.renderDistanceChunks)
-				setupBuffers(lodArray);
+				setupBuffers(numbChunksWide);
 			
 			
-			genThread.execute(createLodGenerationThread(cameraX, cameraZ, lodArray, colorArray));
+			genThread.execute(createLodBufferGenerationThread(cameraX, cameraZ, numbChunksWide));
 		}
 		
 		// replace the buffers used to draw and build,
@@ -306,7 +296,6 @@ public class LodRenderer
 		
 		mc.mcProfiler.endStartSection("LOD cleanup");
 		
-		
 		// this must be done otherwise other parts of the screen may be drawn with a fog effect
 		// IE the GUI
 		GlStateManager.disableFog();
@@ -344,21 +333,6 @@ public class LodRenderer
 		
 		for(int i = 0; i < numbBufferThreads; i++)
 		{
-			if (regen)
-			{
-				// this is the best way I could find to
-				// overwrite the old data
-				// (which needs to be done otherwise old
-				// LODs may be drawn)
-				buildableNearBuffers[i].getByteBuffer().clear();
-				buildableNearBuffers[i].getByteBuffer().put(clearBytes);
-				buildableNearBuffers[i].getByteBuffer().clear();
-				
-				buildableFarBuffers[i].getByteBuffer().clear();
-				buildableFarBuffers[i].getByteBuffer().put(clearBytes);
-				buildableFarBuffers[i].getByteBuffer().clear();
-			}
-
 			bufferThreads.get(i).setNewData(buildableNearBuffers[i], buildableFarBuffers[i], fogDistance, lods, colors, i, numbBufferThreads);
 		}
 		
@@ -526,7 +500,10 @@ public class LodRenderer
 			bufferThreads.add(new BuildBufferThread());
 	}
 	
-	private void setupBuffers(AxisAlignedBB[][] lods)
+	/**
+	 * 
+	 */
+	private void setupBuffers(int numbChunksWide)
 	{
 		drawableNearBuffers = new BufferBuilder[numbBufferThreads];
 		drawableFarBuffers = new BufferBuilder[numbBufferThreads];
@@ -535,8 +512,11 @@ public class LodRenderer
 		buildableFarBuffers = new BufferBuilder[numbBufferThreads];
 		
 		
-		// TODO this should change based on whether we are using near/far or both fog settings
-		int bufferMaxCapacity = (lods.length * lods.length * (6 * 4 * ((3 * 4) + (4 * 4)))) / numbBufferThreads;
+		// calculate the max amount of storage needed (in bytes)
+		// by any singular buffer
+		// NOTE: most buffers won't use the full amount, but this should prevent
+		//		them from needing to allocate more memory (which is a slow progress)
+		int bufferMaxCapacity = (numbChunksWide * numbChunksWide * (6 * 4 * ((3 * 4) + (4 * 4)))) / numbBufferThreads;
 		
 		for(int i = 0; i < numbBufferThreads; i++)
 		{
@@ -546,8 +526,6 @@ public class LodRenderer
 			buildableNearBuffers[i] = new BufferBuilder(bufferMaxCapacity);
 			buildableFarBuffers[i] = new BufferBuilder(bufferMaxCapacity);
 		}
-		
-		clearBytes = new byte[bufferMaxCapacity];
 	}
 	
 	
@@ -576,10 +554,23 @@ public class LodRenderer
 	}
 	
 	
-	
-	private Thread createLodGenerationThread(double cameraX, double cameraZ,
-			AxisAlignedBB[][] lodArray, Color[][] colorArray)
+	/**
+	 * Create a thread to asynchronously generate LOD buffers
+	 * centered around the given camera X and Z.
+	 * <br>
+	 * This thread will write to the drawableNearBuffers and drawableFarBuffers.
+	 * <br>
+	 * After the buildable buffers have been generated they must be
+	 * swapped with the drawable buffers to be drawn.
+	 */
+	private Thread createLodBufferGenerationThread(double cameraX, double cameraZ,
+			int numbChunksWide)
 	{
+		// this is where we store the points for each LOD object
+		AxisAlignedBB lodArray[][] = new AxisAlignedBB[numbChunksWide][numbChunksWide];
+		// this is where we store the color for each LOD object
+		Color colorArray[][] = new Color[numbChunksWide][numbChunksWide];
+		
 		int alpha = 255; // 0 - 255
 		Color red = new Color(255, 0, 0, alpha);
 		Color black = new Color(0, 0, 0, alpha);
@@ -589,7 +580,6 @@ public class LodRenderer
 		@SuppressWarnings("unused")
 		Color error = new Color(255, 0, 225, alpha); // bright pink
 		
-		int numbChunksWide = lodArray.length;
 		// this seemingly useless math is required,
 		// just using (int) camera doesn't work
 		int playerXChunkOffset = ((int) cameraX / LodChunk.WIDTH) * LodChunk.WIDTH;
