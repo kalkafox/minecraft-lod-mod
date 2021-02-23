@@ -778,7 +778,7 @@ public class LodChunk
 		
 		s += "x: " + x + " z: " + z + "\t";
 		
-		s += "(" + colors[ColorDirection.TOP.value].getRed() + ", " + colors[ColorDirection.TOP.value].getGreen() + ", " + colors[ColorDirection.TOP.value].getBlue() + "), ";
+		s += "(" + colors[ColorDirection.TOP.value].getRed() + ", " + colors[ColorDirection.TOP.value].getGreen() + ", " + colors[ColorDirection.TOP.value].getBlue() + ")";
 		
 		return s;
 	}
