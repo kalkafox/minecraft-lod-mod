@@ -496,6 +496,9 @@ public class LodRenderer
 		
 		for(int i = 0; i < numbBufferThreads; i++)
 		{
+			// TODO complain or do something when memory is too low
+			// currently the VM will just crash and complain there is no more memory
+			// issue #4
 			drawableNearBuffers[i] = new BufferBuilder(bufferMaxCapacity);
 			drawableFarBuffers[i] = new BufferBuilder(bufferMaxCapacity);
 			
@@ -565,7 +568,6 @@ public class LodRenderer
 		int startX = (-LodChunk.WIDTH * (numbChunksWide / 2)) + playerXChunkOffset;
 		int startZ = (-LodChunk.WIDTH * (numbChunksWide / 2)) + playerZChunkOffset;
 		
-		
 		Thread t = new Thread(()->
 		{
 			// x axis
@@ -612,7 +614,6 @@ public class LodRenderer
 							(lod.colors[ColorDirection.TOP.value].getGreen()),
 							(lod.colors[ColorDirection.TOP.value].getBlue()),
 							lod.colors[ColorDirection.TOP.value].getAlpha());
-					
 					
 					
 					if (!debugging)
