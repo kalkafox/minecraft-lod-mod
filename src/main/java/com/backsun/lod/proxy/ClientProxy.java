@@ -22,10 +22,11 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 // Minecraft.getMinecraft().getIntegratedServer()
 
 /**
- * This is used by the client.
+ * This handles all events sent to the client,
+ * and is the starting point for most of this program.
  * 
  * @author James_Seibel
- * @version 02-21-2021
+ * @version 02-23-2021
  */
 public class ClientProxy extends CommonProxy
 {
@@ -57,6 +58,10 @@ public class ClientProxy extends CommonProxy
 		GL11.glDisable(GL11.GL_STENCIL_TEST);
 	}
 	
+	/**
+	 * Do any setup that is required to draw LODs
+	 * and then tell the LodRenderer to draw.
+	 */
 	public void renderLods(float partialTicks)
 	{
 		int newWidth = Math.max(4, (Minecraft.getMinecraft().gameSettings.renderDistanceChunks * LodChunk.WIDTH * 2) / LodRegion.SIZE);
@@ -116,7 +121,7 @@ public class ClientProxy extends CommonProxy
 	@SubscribeEvent
 	public void chunkLoadEvent(ChunkEvent event)
 	{
-		lodWorld = lodBuilder.generateLodChunk(event.getChunk());
+		lodWorld = lodBuilder.generateLodChunkAsync(event.getChunk());
 	}
 	
 	/**
@@ -132,7 +137,7 @@ public class ClientProxy extends CommonProxy
 			
 			if(world != null)
 			{
-				lodWorld = lodBuilder.generateLodChunk(world.getChunkFromChunkCoords(event.getChunkX(), event.getChunkZ()));
+				lodWorld = lodBuilder.generateLodChunkAsync(world.getChunkFromChunkCoords(event.getChunkX(), event.getChunkZ()));
 			}
 		}
 	}

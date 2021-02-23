@@ -3,7 +3,7 @@ package com.backsun.lod.builders;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.backsun.lod.handlers.LodFileHandler;
+import com.backsun.lod.handlers.LodDimensionFileHandler;
 import com.backsun.lod.objects.LodChunk;
 import com.backsun.lod.objects.LodDimension;
 import com.backsun.lod.objects.LodWorld;
@@ -20,12 +20,12 @@ import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
  * (specifically: Lod World, Dimension, Region, and Chunk objects)
  * 
  * @author James Seibel
- * @version 2-21-2021
+ * @version 2-22-2021
  */
 public class LodBuilder
 {
-	private ExecutorService lodGenThreadPool = Executors.newFixedThreadPool(1);
-	public LodWorld lodWorld;
+	private ExecutorService lodGenThreadPool = Executors.newSingleThreadExecutor();
+	public volatile LodWorld lodWorld;
 	
 	/** Default size of any LOD regions we use */
 	public int regionWidth = 5;
@@ -41,7 +41,7 @@ public class LodBuilder
 	 * Returns LodWorld so that it can be passed
 	 * to the LodRenderer.
 	 */
-	public LodWorld generateLodChunk(Chunk chunk)
+	public LodWorld generateLodChunkAsync(Chunk chunk)
 	{
 		Minecraft mc = Minecraft.getMinecraft();
 		
@@ -68,13 +68,13 @@ public class LodBuilder
 				
 				if (lodWorld == null)
 				{
-					lodWorld = new LodWorld(LodFileHandler.getWorldName());
+					lodWorld = new LodWorld(LodDimensionFileHandler.getWorldName());
 				}
 				else
 				{
 					// if we have a lodWorld make sure 
 					// it is for this minecraft world
-					if (!lodWorld.worldName.equals(LodFileHandler.getWorldName()))
+					if (!lodWorld.worldName.equals(LodDimensionFileHandler.getWorldName()))
 					{
 						// this lodWorld isn't for this minecraft world
 						// delete it so we can get a new one
@@ -106,7 +106,6 @@ public class LodBuilder
 				// they will throw errors as they try to access things that no longer
 				// exist.
 			}
-			
 		});
 		lodGenThreadPool.execute(thread);
 		
@@ -119,9 +118,9 @@ public class LodBuilder
 	 */
 	public boolean isValidChunk(Chunk chunk)
 	{
-		ExtendedBlockStorage[] data = chunk.getBlockStorageArray();
+		ExtendedBlockStorage[] blockStorage = chunk.getBlockStorageArray();
 		
-		for(ExtendedBlockStorage e : data)
+		for(ExtendedBlockStorage e : blockStorage)
 		{
 			if(e != null && !e.isEmpty())
 			{

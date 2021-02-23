@@ -1,13 +1,12 @@
 package com.backsun.lod.util.enums;
 
 /**
+ * NE, SE, SW, NW
  * 
  * @author James Seibel
  * @version 1-20-2020
- * 
- * NE, SE, SW, NW
  */
-public enum LodLocation
+public enum LodCorner
 {
 	// used for position
 	
@@ -22,7 +21,7 @@ public enum LodLocation
 	
 	public final int value;
 	
-	private LodLocation(int newValue)
+	private LodCorner(int newValue)
 	{
 		value = newValue;
 	}

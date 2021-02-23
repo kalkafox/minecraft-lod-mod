@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /**
+ * This is linked to Forge's mod config GUI.
  * 
  * @author James Seibel
  * @version 02-14-2021

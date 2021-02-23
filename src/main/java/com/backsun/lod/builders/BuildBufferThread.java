@@ -5,7 +5,6 @@ import java.util.concurrent.Callable;
 import org.lwjgl.opengl.GL11;
 
 import com.backsun.lod.objects.NearFarBuffer;
-import com.backsun.lod.renderer.RenderUtil;
 import com.backsun.lod.util.enums.FogDistance;
 
 import net.minecraft.client.renderer.BufferBuilder;
@@ -13,10 +12,12 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.AxisAlignedBB;
 
 /**
- * 
+ * This object is used to create NearFarBuffer objects
+ * in a thread independent way, so multiple of these objects can be
+ * created and executed in parallel to populate BufferBuilders.
  * 
  * @author James Seibel
- * @version 02-21-2021
+ * @version 02-22-2021
  */
 public class BuildBufferThread implements Callable<NearFarBuffer>
 {
@@ -70,6 +71,9 @@ public class BuildBufferThread implements Callable<NearFarBuffer>
 		int blue;
 		int alpha;
 		
+		// this is done if the FogDistance is either
+		// NEAR or FAR, if it is NEAR_AND_FAR
+		// the buffer is determined for each LOD
 		if (distanceMode == FogDistance.NEAR)
 		{
 			currentBuffer = nearBuffer;
@@ -97,10 +101,10 @@ public class BuildBufferThread implements Callable<NearFarBuffer>
 				blue = colors[i][j].getBlue();
 				alpha = colors[i][j].getAlpha();
 				
-				// choose which buffer to add these LODs too
+				
 				if (distanceMode == FogDistance.NEAR_AND_FAR)
 				{
-					if (RenderUtil.isCoordinateInNearFogArea(i, j, numbChunksWide / 2))
+					if (isCoordinateInNearFogArea(i, j, numbChunksWide / 2))
 						currentBuffer = nearBuffer;
 					else
 						currentBuffer = farBuffer;
@@ -193,6 +197,22 @@ public class BuildBufferThread implements Callable<NearFarBuffer>
 	{
 		buffer.pos(x, y, z).color(red, green, blue, alpha).endVertex();
 	}
-
+	
+	
+	
+	/**
+	 * Find the coordinates that are in the center half of the given
+	 * 2D matrix, starting at (0,0) and going to (2 * lodRadius, 2 * lodRadius).
+	 */
+	private static boolean isCoordinateInNearFogArea(int chunkX, int chunkZ, int lodRadius)
+	{
+		int halfRadius = lodRadius / 2;
+		
+		return (chunkX >= lodRadius - halfRadius 
+				&& chunkX <= lodRadius + halfRadius) 
+				&& 
+				(chunkZ >= lodRadius - halfRadius
+				&& chunkZ <= lodRadius + halfRadius);
+	}
 	
 }

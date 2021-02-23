@@ -1,14 +1,13 @@
 package com.backsun.lod.objects;
 
-import java.util.Dictionary;
-import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Map;
 
 /**
  * This stores all LODs for a given world.
  * 
  * @author James Seibel
- * @version 01-31-2021
+ * @version 02-22-2021
  */
 public class LodWorld
 {
@@ -17,7 +16,7 @@ public class LodWorld
 	/**
 	 * Key = Dimension id (as an int)
 	 */
-	private Dictionary<Integer, LodDimension> lodDimensions;
+	private Map<Integer, LodDimension> lodDimensions;
 	
 	
 	public LodWorld(String newWorldName)
@@ -38,12 +37,27 @@ public class LodWorld
 		return lodDimensions.get(dimensionId);
 	}
 	
-	
+	/**
+	 * Resizes the max width in regions that each LodDimension
+	 * should use. 
+	 */
 	public void resizeDimensionRegionWidth(int newWidth)
 	{
-		Enumeration<Integer> keys = lodDimensions.keys();
+		for(Integer key : lodDimensions.keySet())
+			lodDimensions.get(key).setRegionWidth(newWidth);
+	}
+	
+	
+	
+	@Override
+	public String toString()
+	{
+		String s = "";
 		
-		while(keys.hasMoreElements())
-			lodDimensions.get(keys.nextElement()).setRegionWidth(newWidth);
+		s += worldName + "\t - dimensions: ";
+		for(Integer key : lodDimensions.keySet())
+			s += lodDimensions.get(key).dimension.getName() + ", ";
+		
+		return s;
 	}
 }

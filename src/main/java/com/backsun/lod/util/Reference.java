@@ -1,6 +1,7 @@
 package com.backsun.lod.util;
 
 /**
+ * This holds meta information about the mod.
  * 
  * @author James Seibel
  * @version 04-16-2020

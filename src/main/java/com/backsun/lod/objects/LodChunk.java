@@ -3,7 +3,7 @@ package com.backsun.lod.objects;
 import java.awt.Color;
 
 import com.backsun.lod.util.enums.ColorDirection;
-import com.backsun.lod.util.enums.LodLocation;
+import com.backsun.lod.util.enums.LodCorner;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -73,7 +73,7 @@ public class LodChunk
 	//==============//
 	
 	/**
-	 * Create an empty LodChunk
+	 * Create an empty invisible LodChunk at (0,0)
 	 */
 	public LodChunk()
 	{
@@ -145,7 +145,7 @@ public class LodChunk
 		
 		// top
 		top = new short[4];
-		for(LodLocation loc : LodLocation.values())
+		for(LodCorner loc : LodCorner.values())
 		{
 			lastIndex = index;
 			index = data.indexOf(DATA_DELIMITER, lastIndex + 1);
@@ -156,7 +156,7 @@ public class LodChunk
 		
 		// bottom
 		bottom = new short[4];
-		for(LodLocation loc : LodLocation.values())
+		for(LodCorner loc : LodCorner.values())
 		{
 			lastIndex = index;
 			index = data.indexOf(DATA_DELIMITER, lastIndex + 1);
@@ -202,11 +202,11 @@ public class LodChunk
 	}
 	
 	/**
-	 * Illegal argument is thrown if either the
-	 * chunk or world is null. The reason the world
-	 * can't be null is because it's required to determine
-	 * a block's color.
-	 * @throws IllegalArgumentException
+	 * Creates a LodChunk for a chunk in the given world. <br>
+	 * Note: The world is required to determine each block's color
+	 * 
+	 * @throws IllegalArgumentException 
+	 * thrown if either the chunk or world is null.
 	 */
 	public LodChunk(Chunk chunk, World world) throws IllegalArgumentException
 	{
@@ -228,16 +228,16 @@ public class LodChunk
 		colors = new Color[6];
 		
 		// generate the top and bottom points of this LOD
-		for(LodLocation loc : LodLocation.values())
+		for(LodCorner loc : LodCorner.values())
 		{
-			top[loc.value] = generateLodSection(chunk, true, loc);
-			bottom[loc.value] = generateLodSection(chunk, false, loc);
+			top[loc.value] = generateLodCorner(chunk, SectionGenerationMode.GENERATE_TOP, loc);
+			bottom[loc.value] = generateLodCorner(chunk, SectionGenerationMode.GENERATE_BOTTOM, loc);
 		}
 		
 		// determine the average color for each direction
 		for(ColorDirection dir : ColorDirection.values())
 		{
-			colors[dir.value] = generateLodColorSection(chunk, world, dir);
+			colors[dir.value] = generateLodColor(chunk, world, dir);
 		}
 	}
 	
@@ -253,15 +253,17 @@ public class LodChunk
 	
 	
 	/**
+	 * Generate the height for the given LodLocation, either the top or bottom.
+	 * <br><br>
 	 * If invalid/null/empty chunks are given 
 	 * crashes may occur.
 	 */
-	public short generateLodSection(Chunk chunk, boolean getTopSection, LodLocation lodLoc)
+	private short generateLodCorner(Chunk chunk, SectionGenerationMode generationMode, LodCorner lodLoc)
 	{
 		// should have a length of 16
 		// (each storage is 16x16x16 and the
 		// world height is 256)
-		ExtendedBlockStorage[] data = chunk.getBlockStorageArray();
+		ExtendedBlockStorage[] blockStorage = chunk.getBlockStorageArray();
 		
 		
 		
@@ -313,21 +315,29 @@ public class LodChunk
 		}
 		
 		
-		if(getTopSection)
-			return determineTopPoint(data, startX, endX, startZ, endZ);
+		if(generationMode == SectionGenerationMode.GENERATE_TOP)
+			return determineTopPoint(blockStorage, startX, endX, startZ, endZ);
 		else
-			return determineBottomPoint(data, startX, endX, startZ, endZ);
+			return determineBottomPoint(blockStorage, startX, endX, startZ, endZ);
+	}
+	/** GENERATE_TOP, GENERATE_BOTTOM */
+	private enum SectionGenerationMode
+	{
+		GENERATE_TOP,
+		GENERATE_BOTTOM;
 	}
 	
-	private short determineBottomPoint(ExtendedBlockStorage[] data, int startX, int endX, int startZ, int endZ)
+	/**
+	 * Find the lowest valid point from the bottom.
+	 */
+	private short determineBottomPoint(ExtendedBlockStorage[] blockStorage, int startX, int endX, int startZ, int endZ)
 	{
 		// search from the bottom up
-		for(int i = 0; i < data.length; i++)
+		for(int i = 0; i < blockStorage.length; i++)
 		{
 			for(int y = 0; y < CHUNK_DATA_HEIGHT; y++)
 			{
-				
-				if(isLayerValidLodPoint(data, startX, endX, startZ, endZ, i, y))
+				if(isLayerValidLodPoint(blockStorage, startX, endX, startZ, endZ, i, y))
 				{
 					// we found
 					// enough blocks in this
@@ -335,23 +345,24 @@ public class LodChunk
 					// LOD point
 					return (short) (y + (i * CHUNK_DATA_HEIGHT));
 				}
-				
-			} // y
-		} // data
-		
+			}
+		}
 		
 		// we never found a valid LOD point
 		return -1;
 	}
 	
-	private short determineTopPoint(ExtendedBlockStorage[] data, int startX, int endX, int startZ, int endZ)
+	/**
+	 * Find the highest valid point from the Top
+	 */
+	private short determineTopPoint(ExtendedBlockStorage[] blockStorage, int startX, int endX, int startZ, int endZ)
 	{
 		// search from the top down
-		for(int i = data.length - 1; i >= 0; i--)
+		for(int i = blockStorage.length - 1; i >= 0; i--)
 		{
 			for(int y = CHUNK_DATA_WIDTH - 1; y >= 0; y--)
 			{
-				if(isLayerValidLodPoint(data, startX, endX, startZ, endZ, i, y))
+				if(isLayerValidLodPoint(blockStorage, startX, endX, startZ, endZ, i, y))
 				{
 					// we found
 					// enough blocks in this
@@ -359,10 +370,8 @@ public class LodChunk
 					// LOD point
 					return (short) (y + (i * CHUNK_DATA_HEIGHT));
 				}
-			} // y
-		} // data
-		
-		
+			}
+		}
 		
 		// we never found a valid LOD point
 		return -1;
@@ -373,7 +382,7 @@ public class LodChunk
 	 * values a valid LOD point?
 	 */
 	private boolean isLayerValidLodPoint(
-			ExtendedBlockStorage[] data, 
+			ExtendedBlockStorage[] blockStorage, 
 			int startX, int endX, 
 			int startZ, int endZ, 
 			int dataIndex, int y)
@@ -385,7 +394,7 @@ public class LodChunk
 		{
 			for(int z = startZ; z < endZ; z++)
 			{
-				if(data[dataIndex] == null)
+				if(blockStorage[dataIndex] == null)
 				{
 					// this section doesn't have any blocks,
 					// it is not a valid section
@@ -393,7 +402,7 @@ public class LodChunk
 				}
 				else
 				{
-					if(data[dataIndex].get(x, y, z) != null && Block.getIdFromBlock(data[dataIndex].get(x, y, z).getBlock()) != airBlockId)
+					if(blockStorage[dataIndex].get(x, y, z) != null && Block.getIdFromBlock(blockStorage[dataIndex].get(x, y, z).getBlock()) != airBlockId)
 					{
 						// we found a valid block in
 						// in this layer
@@ -412,9 +421,11 @@ public class LodChunk
 		return false;
 	}
 	
-	
-	
-	private Color generateLodColorSection(Chunk chunk, World world, ColorDirection colorDir)
+	/**
+	 * Generate the color of the given ColorDirection at the given chunk
+	 * in the given world.
+	 */
+	private Color generateLodColor(Chunk chunk, World world, ColorDirection colorDir)
 	{
 		Minecraft mc =  Minecraft.getMinecraft();
 		BlockColors bc = mc.getBlockColors();
@@ -441,11 +452,18 @@ public class LodChunk
 	}
 	
 	/**
-	 * Only accepts TOP and BOTTOM as ColorPositions
+	 * Generates the color of the top or bottom of a given chunk in the given world.
+	 * 
+	 * @throws IllegalArgumentException if given a ColorDirection other than TOP or BOTTOM
 	 */
 	private Color generateLodColorVertical(Chunk chunk, ColorDirection colorDir, World world, BlockColors bc)
 	{
-		ExtendedBlockStorage[] data = chunk.getBlockStorageArray();
+		if(colorDir != ColorDirection.TOP && colorDir != ColorDirection.BOTTOM)
+		{
+			throw new IllegalArgumentException("generateLodColorVertical only accepts the ColorDirection TOP or BOTTOM");
+		}
+		
+		ExtendedBlockStorage[] blockStorage = chunk.getBlockStorageArray();
 		
 		int numbOfBlocks = 0;
 		int red = 0;
@@ -456,8 +474,8 @@ public class LodChunk
 		
 		
 		// either go top down or bottom up
-		int dataStart = goTopDown? data.length - 1 : 0;
-		int dataMax = data.length; 
+		int dataStart = goTopDown? blockStorage.length - 1 : 0;
+		int dataMax = blockStorage.length; 
 		int dataMin = 0;
 		int dataIncrement = goTopDown? -1 : 1;
 		
@@ -474,16 +492,16 @@ public class LodChunk
 				
 				for(int di = dataStart; !foundBlock && di >= dataMin && di < dataMax; di += dataIncrement)
 				{
-					if(!foundBlock && data[di] != null)
+					if(!foundBlock && blockStorage[di] != null)
 					{
 						for(int y = topStart; !foundBlock && y >= topMin && y < topMax; y += topIncrement)
 						{
 							int ci;
-							if(Block.getIdFromBlock(data[di].get(x, y, z).getBlock()) == waterBlockId)
+							if(Block.getIdFromBlock(blockStorage[di].get(x, y, z).getBlock()) == waterBlockId)
 								// this is a special case since getColor on water generally returns white
 								ci = waterColor;
 							else
-								ci = bc.getColor(data[di].get(x, y, z), world, new BlockPos(x,y,z));
+								ci = bc.getColor(blockStorage[di].get(x, y, z), world, new BlockPos(x,y,z));
 							
 							if(ci == 0)
 							{
@@ -519,10 +537,20 @@ public class LodChunk
 		
 		return new Color(red, green, blue);
 	}
-
+	
+	/**
+	 * Generates the color of the side of a given chunk in the given world for the given ColorDirection.
+	 * 
+	 * @throws IllegalArgumentException if given a ColorDirection other than N, S, W, E (North, South, East, West)
+	 */
 	private Color generateLodColorHorizontal(Chunk chunk, ColorDirection colorDir, World world, BlockColors bc)
 	{
-		ExtendedBlockStorage[] data = chunk.getBlockStorageArray();
+		if(colorDir != ColorDirection.N && colorDir != ColorDirection.S && colorDir != ColorDirection.E && colorDir != ColorDirection.W)
+		{
+			throw new IllegalArgumentException("generateLodColorHorizontal only accepts the ColorDirection N (North), S (South), E (East), or W (West)");
+		}
+		
+		ExtendedBlockStorage[] blockStorage = chunk.getBlockStorageArray();
 		
 		int numbOfBlocks = 0;
 		int red = 0;
@@ -563,9 +591,9 @@ public class LodChunk
 		}
 		
 		
-		for (int di = 0; di < data.length; di++)
+		for (int di = 0; di < blockStorage.length; di++)
 		{
-			if (data[di] != null)
+			if (blockStorage[di] != null)
 			{
 				for (int y = 0; y < CHUNK_DATA_HEIGHT; y++)
 				{
@@ -607,11 +635,11 @@ public class LodChunk
 							}
 							
 							int ci;
-							if(Block.getIdFromBlock(data[di].get(x, y, z).getBlock()) == waterBlockId)
+							if(Block.getIdFromBlock(blockStorage[di].get(x, y, z).getBlock()) == waterBlockId)
 								// this is a special case since getColor on water generally returns white
 								ci = waterColor;
 							else
-								ci = bc.getColor(data[di].get(x, y, z), world, new BlockPos(x,y,z));
+								ci = bc.getColor(blockStorage[di].get(x, y, z), world, new BlockPos(x,y,z));
 							
 							if (ci == 0) {
 								// skip air or invisible blocks
@@ -671,6 +699,30 @@ public class LodChunk
 	
 	
 	
+	//================//
+	// misc functions //
+	//================//
+	
+	/**
+	 * If this LOD is either invisible from every
+	 * direction or doesn't have a valid height 
+	 * it is empty.
+	 */
+	public boolean isLodEmpty()
+	{
+		for(LodCorner corner : LodCorner.values())
+			if(top[corner.value] != -1 || bottom[corner.value] != -1)
+				// at least one corner is valid
+				return false;
+		
+		Color invisible = new Color(0,0,0,0);
+		for(ColorDirection dir : ColorDirection.values())
+			if(!colors[dir.value].equals(invisible))
+				// at least one direction has a non-invisible color
+				return false;
+		
+		return true;
+	}
 	
 	
 	
@@ -679,7 +731,6 @@ public class LodChunk
 	//========//
 	// output //
 	//========//
-	
 	
 	
 	/**
@@ -726,27 +777,6 @@ public class LodChunk
 		String s = "";
 		
 		s += "x: " + x + " z: " + z + "\t";
-		
-//		s += "top: ";
-//		for(int i = 0; i < top.length; i++)
-//		{
-//			s += top[i] + " ";
-//		}
-//		s += "\t";
-		
-//		s += "bottom: ";
-//		for(int i = 0; i < bottom.length; i++)
-//		{
-//			s += bottom[i] + " ";
-//		}
-//		s += "\t";
-		
-//		s += "colors ";
-//		for(int i = 0; i < colors.length; i++)
-//		{
-//			if(colors[i] != null)
-//				s += "(" + colors[i].getRed() + ", " + colors[i].getGreen() + ", " + colors[i].getBlue() + "), ";
-//		}
 		
 		s += "(" + colors[ColorDirection.TOP.value].getRed() + ", " + colors[ColorDirection.TOP.value].getGreen() + ", " + colors[ColorDirection.TOP.value].getBlue() + "), ";
 		

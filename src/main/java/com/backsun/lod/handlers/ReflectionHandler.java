@@ -11,7 +11,8 @@ import net.minecraft.client.Minecraft;
 
 /**
  * This object is used to get variables from methods
- * where they are private.
+ * where they are private. Specifically the fog setting
+ * in Optifine.
  * 
  * @author James Seibel
  * @version 09-21-2020
