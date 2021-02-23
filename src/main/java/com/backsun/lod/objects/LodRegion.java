@@ -64,9 +64,6 @@ public class LodRegion
 		if(arrayX >= SIZE || arrayZ >= SIZE)
 			return null;
 		
-		// TODO fix some LOD strips showing up in the wrong location
-		// issue #2
-		// maybe this has to do with ABS being used incorrectly?
 		return chunks[arrayX][arrayZ];
 	}
 	

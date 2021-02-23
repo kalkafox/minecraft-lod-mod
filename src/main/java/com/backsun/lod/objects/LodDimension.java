@@ -206,8 +206,8 @@ public class LodDimension
 	 */
 	public void addLod(LodChunk lod)
 	{
-		int regionX = (lod.x + centerX) / LodRegion.SIZE;
-		int regionZ = (lod.z + centerZ) / LodRegion.SIZE;
+		int regionX = lod.x / LodRegion.SIZE;
+		int regionZ = lod.z / LodRegion.SIZE;
 		
 		// prevent issues if X/Z is negative and less than 16
 		if (lod.x < 0)
@@ -250,9 +250,8 @@ public class LodDimension
 	 */
 	public LodChunk getLodFromCoordinates(int chunkX, int chunkZ)
 	{
-		// (chunkX + centerX) % width
-		int regionX = (chunkX + centerX) / LodRegion.SIZE;
-		int regionZ = (chunkZ + centerZ) / LodRegion.SIZE;
+		int regionX = chunkX / LodRegion.SIZE;
+		int regionZ = chunkZ / LodRegion.SIZE;
 		
 		// prevent issues if chunkX/Z is negative and less than width
 		if (chunkX < 0)
