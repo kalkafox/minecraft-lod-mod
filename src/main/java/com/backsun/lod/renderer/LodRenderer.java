@@ -154,6 +154,9 @@ public class LodRenderer
 			prevFogDistance != LodConfig.fogDistance ||
 			lodDimension != newDimension)
 		{
+			// TODO fix teleportation not regenerating the LODs
+			// issue #5
+			
 			// yes
 			regen = true;
 			
