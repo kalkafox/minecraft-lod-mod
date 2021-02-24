@@ -37,7 +37,7 @@ import net.minecraft.util.math.MathHelper;
 
 /**
  * @author James Seibel
- * @version 2-22-2021
+ * @version 2-24-2021
  */
 public class LodRenderer
 {
@@ -63,18 +63,25 @@ public class LodRenderer
 	public LodDimension lodDimension = null;
 	
 	
-	
+	/** Total number of CPU cores available to the Java VM */
 	private int maxNumbThreads = Runtime.getRuntime().availableProcessors();
-	/** How many threads should be used for building the render buffer. */
+	/** How many threads should be used for building render buffers */
 	private int numbBufferThreads = maxNumbThreads;
+	/** This stores all the BuildBufferThread objects for each CPU core */
 	private ArrayList<BuildBufferThread> bufferThreads = new ArrayList<BuildBufferThread>();
+	/** The buffers that are used to draw LODs using near fog */
 	private volatile BufferBuilder[] drawableNearBuffers = null;
+	/** The buffers that are used to draw LODs using far fog */
 	private volatile BufferBuilder[] drawableFarBuffers = null;
 	
+	/** The buffers that are used to create LODs using near fog */
 	private volatile BufferBuilder[] buildableNearBuffers = null;
+	/** The buffers that are used to create LODs using far fog */
 	private volatile BufferBuilder[] buildableFarBuffers = null;
 	
+	/** This holds the threads used to generate the LOD buffers */
 	private ExecutorService bufferThreadPool = Executors.newFixedThreadPool(maxNumbThreads);
+	/** This holds the thread used to generate new LODs off the main thread. */
 	private ExecutorService genThread = Executors.newSingleThreadExecutor();
 	
 	/** This is used to determine if the LODs should be regenerated */
@@ -86,10 +93,14 @@ public class LodRenderer
 	/** This is used to determine if the LODs should be regenerated */
 	private FogDistance prevFogDistance = FogDistance.NEAR_AND_FAR;
 	
-	/** if this is true the LODs should be regenerated */
+	/** if this is true the LOD buffers should be regenerated,
+	 * provided they aren't already being regenerated. */
 	private boolean regen = false;
-	
+	/** if this is true the LOD buffers are currently being
+	 * regenerated. */
 	private volatile boolean regenerating = false;
+	/** if this is true new LOD buffers have been generated 
+	 * and are waiting to be swapped with the drawable buffers*/
 	private volatile boolean switchBuffers = false;
 	
 	
