@@ -137,7 +137,7 @@ public class ReflectionHandler
 			// either optifine isn't installed,
 			// the variable name was changed, or
 			// the setup method wasn't called yet.
-			return FogQuality.OFF;
+			return FogQuality.FANCY;
 		}
 		
 		int returnNum = 0;
