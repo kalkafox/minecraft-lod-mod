@@ -79,6 +79,10 @@ public class LodRenderer
 	/** The buffers that are used to create LODs using far fog */
 	private volatile BufferBuilder[] buildableFarBuffers = null;
 	
+	/** If we have more CPU cores than LOD rows to draw this tells
+	 * which drawable buffers will and won't be used. */
+	private boolean[] shouldDrawBuffer = new boolean[maxNumbThreads];
+	
 	/** This holds the threads used to generate the LOD buffers */
 	private ExecutorService bufferThreadPool = Executors.newFixedThreadPool(maxNumbThreads);
 	/** This holds the thread used to generate new LODs off the main thread. */
@@ -353,17 +357,20 @@ public class LodRenderer
 	{
 		for(int i = 0; i < numbBufferThreads; i++)
 		{
-			int pos = bufferBuilder.getByteBuffer().position();
-			buffers[i].getByteBuffer().position(pos);
-			
-			bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-			bufferBuilder.getByteBuffer().clear();
-			// replace the data in bufferBuilder with the data from the given buffer
-			bufferBuilder.putBulkData(buffers[i].getByteBuffer());
-			
-			tessellator.draw();
-			
-			bufferBuilder.getByteBuffer().clear(); // this is required otherwise nothing is drawn
+			if (shouldDrawBuffer[i])
+			{
+				int pos = bufferBuilder.getByteBuffer().position();
+				buffers[i].getByteBuffer().position(pos);
+				
+				bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+				bufferBuilder.getByteBuffer().clear();
+				// replace the data in bufferBuilder with the data from the given buffer
+				bufferBuilder.putBulkData(buffers[i].getByteBuffer());
+				
+				tessellator.draw();
+				
+				bufferBuilder.getByteBuffer().clear(); // this is required otherwise nothing is drawn
+			}
 		}
 	}
 	
@@ -499,11 +506,20 @@ public class LodRenderer
 		buildableFarBuffers = new BufferBuilder[numbBufferThreads];
 		
 		
+		// calculate how many chunks wide, at most
+		// any thread will have to generate
+		int biggestWidth = -1;
+		int[] loads = calculateCpuLoadBalance(numbChunksWide, numbBufferThreads);
+		for(int i : loads)
+			if (i > biggestWidth)
+				biggestWidth = i;
+		
+		
 		// calculate the max amount of storage needed (in bytes)
 		// by any singular buffer
 		// NOTE: most buffers won't use the full amount, but this should prevent
 		//		them from needing to allocate more memory (which is a slow progress)
-		int bufferMaxCapacity = (numbChunksWide * numbChunksWide * (6 * 4 * ((3 * 4) + (4 * 4)))) / numbBufferThreads;
+		int bufferMaxCapacity = (numbChunksWide * biggestWidth * (6 * 4 * ((3 * 4) + (4 * 4))));
 		
 		for(int i = 0; i < numbBufferThreads; i++)
 		{
@@ -625,8 +641,7 @@ public class LodRenderer
 							(lod.colors[ColorDirection.TOP.value].getGreen()),
 							(lod.colors[ColorDirection.TOP.value].getBlue()),
 							lod.colors[ColorDirection.TOP.value].getAlpha());
-					
-					
+										
 					if (!debugging)
 					{
 						// add the color to the array
@@ -678,17 +693,39 @@ public class LodRenderer
 	private void generateLodBuffers(AxisAlignedBB[][] lods, Color[][] colors, FogDistance fogDistance)
 	{
 		List<Future<NearFarBuffer>> bufferFutures = new ArrayList<>();
+		ArrayList<BuildBufferThread> threadsToRun = new ArrayList<>();
+		
+		int indexToStart = 0;
+		int[] threadLoads = calculateCpuLoadBalance(lods.length, numbBufferThreads);
 		
 		// update the information that the bufferThreads are using
 		for(int i = 0; i < numbBufferThreads; i++)
 		{
-			bufferThreads.get(i).setNewData(buildableNearBuffers[i], buildableFarBuffers[i], fogDistance, lods, colors, i, numbBufferThreads);
+			// if we have more threads than LOD rows to generate
+			// don't send the threads to the CPU
+			if (threadLoads[i] != 0)
+			{
+				// update this thread with the latest information
+				bufferThreads.get(i).
+				setNewData(buildableNearBuffers[i], buildableFarBuffers[i], 
+						fogDistance, lods, colors, indexToStart, threadLoads[i]);
+				indexToStart += threadLoads[i];
+				
+				// add this thread to the list of threads we are going to run
+				threadsToRun.add(bufferThreads.get(i));
+				
+				shouldDrawBuffer[i] = true;
+			}
+			else
+			{
+				shouldDrawBuffer[i] = false;
+			}
 		}
 		
 		// run all the bufferThreads and get their results
 		try
 		{
-			bufferFutures = bufferThreadPool.invokeAll(bufferThreads);
+			bufferFutures = bufferThreadPool.invokeAll(threadsToRun);
 		}
 		catch (InterruptedException e)
 		{
@@ -699,20 +736,22 @@ public class LodRenderer
 		// update our buildable buffers
 		for(int i = 0; i < numbBufferThreads; i++)
 		{
-			try
+			// only replace buffers that actually generated something
+			if (threadLoads[i] != 0)
 			{
-				buildableNearBuffers[i] = bufferFutures.get(i).get().nearBuffer;
-				buildableFarBuffers[i] = bufferFutures.get(i).get().farBuffer;
-			}
-			catch(CancellationException | ExecutionException| InterruptedException e)
-			{
-				// this should never happen, but just in case
-				e.printStackTrace();
+				try
+				{
+					buildableNearBuffers[i] = bufferFutures.get(i).get().nearBuffer;
+					buildableFarBuffers[i] = bufferFutures.get(i).get().farBuffer;
+				}
+				catch(CancellationException | ExecutionException| InterruptedException e)
+				{
+					// this should never happen, but just in case
+					e.printStackTrace();
+				}
 			}
 		}
 	}
-	
-	
 	
 	
 	/**
@@ -740,7 +779,6 @@ public class LodRenderer
 	}
 	
 	
-	
 	/**
 	 * Returns if the given coordinate is in the loaded area of the world.
 	 * @param centerCoordinate the center of the loaded world
@@ -752,5 +790,23 @@ public class LodRenderer
 				&& 
 				(j >= centerCoordinate - mc.gameSettings.renderDistanceChunks 
 				&& j <= centerCoordinate + mc.gameSettings.renderDistanceChunks);
+	}
+	
+	
+	/**
+	 * This is a simple implementation of the pigeon hole
+	 * principle to try and give each BuildBufferThread a balanced load.
+	 * 
+	 * @returns an array of ints where each int is how many rows 
+	 * that BuildBufferThread should generate
+	 */
+	private int[] calculateCpuLoadBalance(int numbOfItems, int numbOfThreads)
+	{
+		int[] cpuLoad = new int[numbOfThreads];
+		
+		for(int i = 0; i < numbOfItems; i++)
+			cpuLoad[i % numbOfThreads]++;
+		
+		return cpuLoad;
 	}
 }

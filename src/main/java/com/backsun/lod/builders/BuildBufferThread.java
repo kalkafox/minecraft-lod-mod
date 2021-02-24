@@ -17,7 +17,7 @@ import net.minecraft.util.math.AxisAlignedBB;
  * created and executed in parallel to populate BufferBuilders.
  * 
  * @author James Seibel
- * @version 02-22-2021
+ * @version 02-23-2021
  */
 public class BuildBufferThread implements Callable<NearFarBuffer>
 {
@@ -37,12 +37,19 @@ public class BuildBufferThread implements Callable<NearFarBuffer>
 		
 	}
 	
-	public BuildBufferThread(BufferBuilder newNearBufferBuilder, BufferBuilder newFarBufferBuilder, AxisAlignedBB[][] newLods, Color[][] newColors, FogDistance newDistanceMode, int threadNumber, int totalThreads)
+	public BuildBufferThread(BufferBuilder newNearBufferBuilder, 
+			BufferBuilder newFarBufferBuilder, AxisAlignedBB[][] newLods, 
+			Color[][] newColors, FogDistance newDistanceMode, int newStartingIndex, 
+			int numberOfRowsToGenerate)
 	{
-		setNewData(newNearBufferBuilder, newFarBufferBuilder, distanceMode, newLods, newColors, threadNumber, totalThreads);
+		setNewData(newNearBufferBuilder, newFarBufferBuilder, distanceMode, 
+				newLods, newColors, newStartingIndex, numberOfRowsToGenerate);
 	}
 	
-	public void setNewData(BufferBuilder newNearBufferBuilder, BufferBuilder newFarBufferBuilder, FogDistance newDistanceMode, AxisAlignedBB[][] newLods, Color[][] newColors, int threadNumber, int totalThreads)
+	public void setNewData(BufferBuilder newNearBufferBuilder, 
+			BufferBuilder newFarBufferBuilder, FogDistance newDistanceMode, 
+			AxisAlignedBB[][] newLods, Color[][] newColors, 
+			int newStartingIndex, int numberOfRowsToGenerate)
 	{
 		nearBuffer = newNearBufferBuilder;
 		farBuffer = newFarBufferBuilder;
@@ -50,10 +57,8 @@ public class BuildBufferThread implements Callable<NearFarBuffer>
 		lods = newLods;
 		colors = newColors;
 		
-		int numbChunksWide = lods.length;
-		int rowsToRender = numbChunksWide / totalThreads;
-		startLodIndex = threadNumber * rowsToRender;
-		endLodIndex = (threadNumber + 1) * rowsToRender;
+		startLodIndex = newStartingIndex;
+		endLodIndex = newStartingIndex + numberOfRowsToGenerate;
 	}
 	
 	@Override
