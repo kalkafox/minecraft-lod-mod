@@ -27,11 +27,11 @@ import com.backsun.lod.util.enums.FogQuality;
 import com.backsun.lod.util.enums.LodCorner;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.Entity;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.MathHelper;
 
@@ -146,22 +146,20 @@ public class LodRenderer
 		mc.mcProfiler.startSection("LOD");
 		mc.mcProfiler.startSection("LOD setup");
 		
+		EntityPlayerSP player = mc.player;
 		
 		// should LODs be regenerated?
-		if ((int)Minecraft.getMinecraft().player.posX / LodChunk.WIDTH != prevChunkX ||
-			(int)Minecraft.getMinecraft().player.posZ / LodChunk.WIDTH != prevChunkZ ||
+		if ((int)player.posX / LodChunk.WIDTH != prevChunkX ||
+			(int)player.posZ / LodChunk.WIDTH != prevChunkZ ||
 			previousChunkRenderDistance != mc.gameSettings.renderDistanceChunks ||
 			prevFogDistance != LodConfig.fogDistance ||
 			lodDimension != newDimension)
 		{
-			// TODO fix teleportation not regenerating the LODs
-			// issue #5
-			
 			// yes
 			regen = true;
 			
-			prevChunkX = (int)Minecraft.getMinecraft().player.posX / LodChunk.WIDTH;
-			prevChunkZ = (int)Minecraft.getMinecraft().player.posZ / LodChunk.WIDTH;
+			prevChunkX = (int)player.posX / LodChunk.WIDTH;
+			prevChunkZ = (int)player.posZ / LodChunk.WIDTH;
 			prevFogDistance = LodConfig.fogDistance;
 		}
 		else
@@ -191,7 +189,6 @@ public class LodRenderer
 		
 		
 		// get the camera location
-		Entity player = mc.player;
 		double cameraX = player.lastTickPosX + (player.posX - player.lastTickPosX) * partialTicks;
 		double cameraY = player.lastTickPosY + (player.posY - player.lastTickPosY) * partialTicks;
 		double cameraZ = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * partialTicks;
@@ -233,7 +230,7 @@ public class LodRenderer
 				setupBuffers(numbChunksWide);
 			
 			// generate the LODs on a separate thread to prevent stuttering or freezing
-			genThread.execute(createLodBufferGenerationThread(cameraX, cameraZ, numbChunksWide));
+			genThread.execute(createLodBufferGenerationThread(player.posX, player.posZ, numbChunksWide));
 		}
 		
 		// replace the buffers used to draw and build,
@@ -545,7 +542,7 @@ public class LodRenderer
 	 * After the buildable buffers have been generated they must be
 	 * swapped with the drawable buffers to be drawn.
 	 */
-	private Thread createLodBufferGenerationThread(double cameraX, double cameraZ,
+	private Thread createLodBufferGenerationThread(double playerX, double playerZ,
 			int numbChunksWide)
 	{
 		// this is where we store the points for each LOD object
@@ -564,8 +561,8 @@ public class LodRenderer
 		
 		// this seemingly useless math is required,
 		// just using (int) camera doesn't work
-		int playerXChunkOffset = ((int) cameraX / LodChunk.WIDTH) * LodChunk.WIDTH;
-		int playerZChunkOffset = ((int) cameraZ / LodChunk.WIDTH) * LodChunk.WIDTH;
+		int playerXChunkOffset = ((int) playerX / LodChunk.WIDTH) * LodChunk.WIDTH;
+		int playerZChunkOffset = ((int) playerZ / LodChunk.WIDTH) * LodChunk.WIDTH;
 		// this is where we will start drawing squares
 		// (exactly half the total width)
 		int startX = (-LodChunk.WIDTH * (numbChunksWide / 2)) + playerXChunkOffset;
