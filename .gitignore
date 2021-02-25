@@ -24,3 +24,4 @@ eclipse
 # ignore everything but the mods folder
 run/*
 !run/mods
+/Users/

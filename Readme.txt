@@ -14,7 +14,7 @@ http://mcforge.readthedocs.io/en/latest/gettingstarted/
 
 Step 1: open a command line in the project folder
 
-Step 2: run the command: "./gradlew setupDecompWorkspace"
+Step 2: run the command: "./gradlew genEclipseRuns"
 
 Step 3: run the command: "./gradlew eclipse"
 

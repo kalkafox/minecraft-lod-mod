@@ -9,7 +9,7 @@ import com.backsun.lod.objects.LodRegion;
 import com.backsun.lod.objects.LodWorld;
 import com.backsun.lod.renderer.LodRenderer;
 import com.backsun.lod.util.LodConfig;
-import com.backsun.lodCore.util.RenderGlobalHook;
+import com.backsun.lodcore.util.RenderGlobalHook;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
