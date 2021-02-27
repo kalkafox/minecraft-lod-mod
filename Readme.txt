@@ -1,6 +1,10 @@
 This program is an attempt to create Level Of Details (LODs) in Minecraft.
 The purpose is to increase the maximum view distance in game 
 
+Note: This version will only work in eclipse, and not with optifine.
+
+
+
 Used in congunction with:
 https://gitlab.com/jeseibel/minecraft-lod-core-mod
 
