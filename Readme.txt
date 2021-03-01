@@ -1,11 +1,17 @@
-This program is an attempt to create Level Of Details (LODs) in Minecraft.
-The purpose is to increase the maximum view distance in game 
+This program is an attempt to implement a Level Of Detail system for Minecraft.
+With the purpose of increasing the maximum view distance in game without harming performance.
 
-Note: This version will only work in eclipse, and not with optifine.
+Forge version: 1.12.2-14.23.5.2854
+
+Notes:
+This version will run in eclipse perfectly fine, but will crash retail Minecraft. 
+(However this appears to be because of an incompatible update to the core mod.)
+This version also doesn't work with Optifine at all.
+(Attempting to run with Optifine in either eclipse or retail Minecraft
+will either prevent the game from launching at all or crash during loading.)
 
 
-
-Used in congunction with:
+Used in conjunction with:
 https://gitlab.com/jeseibel/minecraft-lod-core-mod
 
 
