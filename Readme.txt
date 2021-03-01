@@ -10,7 +10,7 @@ which means that LODs will be drawn on top of normal terrain.
 This version also doesn't work with optifine at all, since it breaks the core mod.
 
 
-Used in congunction with:
+Used in conjunction with:
 https://gitlab.com/jeseibel/minecraft-lod-core-mod
 
 
