@@ -17,26 +17,21 @@
  */
 package com.seibel.lod.objects;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import com.seibel.lod.enums.DistanceGenerationMode;
+import com.seibel.lod.handlers.LodDimensionFileHandler;
 import com.seibel.lod.handlers.LodQuadTreeDimensionFileHandler;
 import com.seibel.lod.util.LodUtil;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.DimensionType;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerWorld;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This object holds all loaded LOD regions
@@ -46,48 +41,36 @@ import net.minecraft.world.server.ServerWorld;
  * @author James Seibel
  * @version 8-8-2021
  */
-public class LodQuadTreeDimension
+public class LodDimension
 {
 	/**TODO a dimension should support two different type of quadTree.
 	 * The ones that are near from the player should always be saved and can be fully generated (even at block level)
 	 * The ones that are far from the player should always be non-savable and at a high level
 	 * If this is not done then you could see how heavy a fully generated 64 region dimension can get.
 	 * IDEA : use a mask like the "isRegionDirty" to achieve this*/
-	
+
 	public final DimensionType dimension;
-	
+
 	/** measured in regions */
 	private volatile int width;
 	/** measured in regions */
 	private volatile int halfWidth;
-	
-	/**  */
-	public static final Set<DistanceGenerationMode> FULL_COMPLEXITY_MASK = new HashSet<DistanceGenerationMode>();
-	static
-	{
-		// I moved the setup here because eclipse was complaining
-		FULL_COMPLEXITY_MASK.add(DistanceGenerationMode.BIOME_ONLY);
-		FULL_COMPLEXITY_MASK.add(DistanceGenerationMode.BIOME_ONLY_SIMULATE_HEIGHT);
-		FULL_COMPLEXITY_MASK.add(DistanceGenerationMode.SURFACE);
-		FULL_COMPLEXITY_MASK.add(DistanceGenerationMode.FEATURES);
-		FULL_COMPLEXITY_MASK.add(DistanceGenerationMode.SERVER);
-	}
-	
-	
-	public volatile LodQuadTree regions[][];
+
+
+	public volatile LodRegion regions[][];
 	public volatile boolean isRegionDirty[][];
-	
+
 	private volatile RegionPos center;
-	
+
 	private LodQuadTreeDimensionFileHandler fileHandler;
-	
-	
+
+
 	/**
 	 * Creates the dimension centered at (0,0)
-	 * 
+	 *
 	 * @param newWidth in regions
 	 */
-	public LodQuadTreeDimension(DimensionType newDimension, LodQuadTreeWorld lodWorld, int newWidth)
+	public LodDimension(DimensionType newDimension, LodWorld lodWorld, int newWidth)
 	{
 		dimension = newDimension;
 		width = newWidth;
@@ -119,7 +102,7 @@ public class LodQuadTreeDimension
 							File.separatorChar + "lod server data" + File.separatorChar + LodUtil.getDimensionIDFromWorld(mc.level));
 				}
 				
-				fileHandler = new LodQuadTreeDimensionFileHandler(saveDir, this);
+				fileHandler = new LodDimensionFileHandler(saveDir, this);
 			}
 			catch (IOException e)
 			{
@@ -130,7 +113,7 @@ public class LodQuadTreeDimension
 		
 		
 		
-		regions = new LodQuadTree[width][width];
+		regions = new LodRegion[width][width];
 		isRegionDirty = new boolean[width][width];
 		
 		// populate isRegionDirty
@@ -328,7 +311,7 @@ public class LodQuadTreeDimension
 	 * stored in the LOD. If an LOD already exists at the given
 	 * coordinates it will be overwritten.
 	 */
-	public Boolean addNode(LodQuadTreeNode lodNode)
+	public Boolean addNode(byte levelOfDetail, int posX, int posZ)
 	{
 		// don't continue if the region can't be saved
 		RegionPos regionPos = LodUtil.convertGenericPosToRegionPos(lodNode.posX, lodNode.posZ, lodNode.detailLevel);
@@ -345,7 +328,7 @@ public class LodQuadTreeDimension
 			region = new LodQuadTree(regionPos);
 			addOrOverwriteRegion(region);
 		}
-		boolean nodeAdded = region.setNodeAtLowerLevel(lodNode);
+		boolean nodeAdded = region.set(lodNode);
 
 		// only save valid LODs to disk
 		if (!lodNode.dontSave && fileHandler != null)

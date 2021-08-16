@@ -17,10 +17,10 @@
  */
 package com.seibel.lod.objects;
 
+import net.minecraft.world.DimensionType;
+
 import java.util.Hashtable;
 import java.util.Map;
-
-import net.minecraft.world.DimensionType;
 
 /**
  * This stores all LODs for a given world.
@@ -29,26 +29,26 @@ import net.minecraft.world.DimensionType;
  * @author Leonardo Amato
  * @version 8-14-2021
  */
-public class LodQuadTreeWorld
+public class LodWorld
 {
 	private String worldName;
-	
-	private Map<DimensionType, LodQuadTreeDimension> lodDimensions;
-	
+
+	private Map<DimensionType, LodDimension> lodDimensions;
+
 	/** If true then the LOD world is setup and ready to use */
 	private boolean isWorldLoaded = false;
-	
+
 	public static final String NO_WORLD_LOADED = "No world loaded";
-	
-	
-	
-	public LodQuadTreeWorld()
+
+
+
+	public LodWorld()
 	{
 		worldName = NO_WORLD_LOADED;
 	}
 	
 	/**
-	 * Set up the LodQuadTreeWorld with the given newWorldName. <br>
+	 * Set up the LodWorld with the given newWorldName. <br>
 	 * This should be done whenever loading a new world.
 	 * 
 	 * @param newWorldName name of the world
@@ -67,7 +67,7 @@ public class LodQuadTreeWorld
 			return;
 		
 		worldName = newWorldName;
-		lodDimensions = new Hashtable<DimensionType, LodQuadTreeDimension>();
+		lodDimensions = new Hashtable<DimensionType, LodDimension>();
 		isWorldLoaded = true;
 	}
 	
@@ -85,10 +85,10 @@ public class LodQuadTreeWorld
 	
 	
 	/**
-	 * Adds newStorage to this world, if a LodQuadTreeDimension
+	 * Adds newStorage to this world, if a LodDimension
 	 * already exists for the given dimension it is replaced.
 	 */
-	public void addLodDimension(LodQuadTreeDimension newStorage)
+	public void addLodDimension(LodDimension newStorage)
 	{
 		if (lodDimensions == null)
 			return;
@@ -97,9 +97,9 @@ public class LodQuadTreeWorld
 	}
 	
 	/**
-	 * Returns null if no LodQuadTreeDimension exists for the given dimension
+	 * Returns null if no LodDimension exists for the given dimension
 	 */
-	public LodQuadTreeDimension getLodDimension(DimensionType dimension)
+	public LodDimension getLodDimension(DimensionType dimension)
 	{
 		if (lodDimensions == null)
 			return null;

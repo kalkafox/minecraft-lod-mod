@@ -18,8 +18,6 @@
 package com.seibel.lod.builders.lodNodeTemplates;
 
 import com.seibel.lod.enums.LodDetail;
-import com.seibel.lod.objects.LodQuadTreeDimension;
-import com.seibel.lod.objects.LodQuadTreeNode;
 
 import net.minecraft.client.renderer.BufferBuilder;
 

@@ -32,8 +32,8 @@ public class LodRegion{
     //a node with 1 is node
     private byte[][][] generationType;
 
-    private int regionPosX;
-    private int regionPosZ;
+    public final int regionPosX;
+    public final int regionPosZ;
 
     public LodRegion(byte minimumLevelOfDetail, RegionPos regionPos){
         this.regionPosX = regionPos.x;

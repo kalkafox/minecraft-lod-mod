@@ -31,8 +31,6 @@ import com.seibel.lod.builders.LodNodeBufferBuilder;
 import com.seibel.lod.builders.LodNodeBuilder;
 import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.handlers.LodConfig;
-import com.seibel.lod.objects.LodQuadTreeDimension;
-import com.seibel.lod.objects.LodQuadTreeNode;
 import com.seibel.lod.proxy.ClientProxy;
 import com.seibel.lod.render.LodNodeRenderer;
 import com.seibel.lod.util.LodThreadFactory;

@@ -35,8 +35,6 @@ import com.seibel.lod.enums.FogDrawOverride;
 import com.seibel.lod.enums.FogQuality;
 import com.seibel.lod.handlers.LodConfig;
 import com.seibel.lod.handlers.ReflectionHandler;
-import com.seibel.lod.objects.LodQuadTreeDimension;
-import com.seibel.lod.objects.LodQuadTreeNode;
 import com.seibel.lod.objects.NearFarFogSettings;
 import com.seibel.lod.objects.NearFarVbos;
 import com.seibel.lod.proxy.ClientProxy;
