@@ -1,6 +1,7 @@
 package com.seibel.lod.objects;
 
 import com.seibel.lod.util.LodUtil;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.Chunk;
 
@@ -93,8 +94,8 @@ public class LodRegion implements Serializable {
      * @return
      */
     public boolean setData(byte lod, int posX, int posZ, byte red, byte green, byte blue, short height, short depth, byte generationType, boolean update) {
-        posX = Math.floorMod(posX, (int) Math.pow(2, lod));
-        posZ = Math.floorMod(posZ, (int) Math.pow(2, lod));
+        posX = Math.floorMod(posX, (int) Math.pow(2, LodUtil.REGION_DETAIL_LEVEL-lod));
+        posZ = Math.floorMod(posZ, (int) Math.pow(2, LodUtil.REGION_DETAIL_LEVEL-lod));
         if ((this.generationType[lod][posX][posZ] == 0) || (generationType < this.generationType[lod][posX][posZ])) {
 
             //update the number of node present
@@ -134,13 +135,25 @@ public class LodRegion implements Serializable {
      * This method will return the data in the position relative to the level of detail
      *
      * @param lod
+     * @return the data at the relative pos and level
+     */
+    public LodDataPoint getData(byte lod, BlockPos blockPos) {
+        int posX = Math.floorMod(blockPos.getX(), (int) Math.pow(2, lod));
+        int posZ = Math.floorMod(blockPos.getZ(), (int) Math.pow(2, lod));
+        return getData(lod, posX, posZ);
+    }
+
+    /**
+     * This method will return the data in the position relative to the level of detail
+     *
+     * @param lod
      * @param posX
      * @param posZ
      * @return the data at the relative pos and level
      */
     public LodDataPoint getData(byte lod, int posX, int posZ) {
-        posX = Math.floorMod(posX, (int) Math.pow(2, lod));
-        posZ = Math.floorMod(posZ, (int) Math.pow(2, lod));
+        posX = Math.floorMod(posX, (int) Math.pow(2, LodUtil.REGION_DETAIL_LEVEL - lod));
+        posZ = Math.floorMod(posZ, (int) Math.pow(2, LodUtil.REGION_DETAIL_LEVEL - lod));
         return new LodDataPoint(
                 height[lod][posX][posZ],
                 depth[lod][posX][posZ],

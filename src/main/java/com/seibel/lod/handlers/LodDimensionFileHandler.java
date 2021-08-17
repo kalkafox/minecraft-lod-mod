@@ -113,7 +113,9 @@ public class LodDimensionFileHandler
 		String fileName = getFileNameAndPathForRegion(regionX, regionZ);
 		if(FILE_EXTENSION == ".bin"){
 			try {
+				System.out.println(fileName);
 				ObjectInputStream is = new ObjectInputStream(new FileInputStream(fileName));
+
 
 				LodRegion region = (LodRegion) is.readObject();
 				is.close();
@@ -261,7 +263,8 @@ public class LodDimensionFileHandler
 
 
 		File oldFile = new File(getFileNameAndPathForRegion(x, z));
-
+		if (!oldFile.getParentFile().exists())
+			oldFile.getParentFile().mkdirs();
 		if(FILE_EXTENSION == ".bin"){
 			try {
 				ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(getFileNameAndPathForRegion(x, z)));
