@@ -25,7 +25,6 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.DimensionType;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerWorld;
-import org.lwjgl.system.CallbackI;
 
 import java.io.File;
 import java.io.IOException;
@@ -324,7 +323,6 @@ public class LodDimension
 			addOrOverwriteRegion(region);
 		}
 		boolean nodeAdded = region.setData(levelPos,lodDataPoint,(byte) generationMode.complexity,true);
-		System.out.println("Node to generate " + levelPos.toString() + " " + nodeAdded);
 
 		// only save valid LODs to disk
 		if (!dontSave && fileHandler != null)
@@ -394,7 +392,7 @@ public class LodDimension
 			return false;
 		}
 
-		return region.doesNodeExist(new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z));
+		return region.doesDataExist(new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z));
 	}
 
 	/**
@@ -410,7 +408,7 @@ public class LodDimension
 			return false;
 		}
 
-		return region.doesNodeExist(levelPos);
+		return region.doesDataExist(levelPos);
 	}
 
 	/**

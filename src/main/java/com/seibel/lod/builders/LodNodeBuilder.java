@@ -169,13 +169,11 @@ public class LodNodeBuilder
 						startZ, endX, endZ);
 				depth = 0;
 			}
-			//public Boolean addNode(byte levelOfDetail, int posX, int posZ, LodDataPoint lodDataPoint, DistanceGenerationMode generationMode, boolean update, boolean dontSave)
 			LevelPos levelPos = new LevelPos(
 					(byte)0 ,
 					chunk.getPos().getMinBlockX() + startX,
 					chunk.getPos().getMinBlockZ() + startZ);
 			levelPos.convert((byte) detail.detailLevel);
-
 			lodDim.addData(levelPos.clone(),
 					new LodDataPoint(height, depth, color),
 					config.distanceGenerationMode,

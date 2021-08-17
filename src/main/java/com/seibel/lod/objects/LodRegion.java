@@ -3,7 +3,6 @@ package com.seibel.lod.objects;
 import com.seibel.lod.util.LodUtil;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.chunk.Chunk;
 
 import java.awt.*;
 import java.io.Serializable;
@@ -36,7 +35,7 @@ public class LodRegion implements Serializable {
     //a node with 1 is node
     private byte[][][] generationType;
 
-    private boolean[][][] nodeExistence;
+    private boolean[][][] dataExistence;
 
     public final int regionPosX;
     public final int regionPosZ;
@@ -52,7 +51,7 @@ public class LodRegion implements Serializable {
         height = new short[POSSIBLE_LOD][][];
         depth = new short[POSSIBLE_LOD][][];
         generationType = new byte[POSSIBLE_LOD][][];
-        nodeExistence = new boolean[POSSIBLE_LOD][][];
+        dataExistence = new boolean[POSSIBLE_LOD][][];
 
 
         //Initialize all the different matrices
@@ -62,7 +61,7 @@ public class LodRegion implements Serializable {
             height[lod] = new short[size][size];
             depth[lod] = new short[size][size];
             generationType[lod] = new byte[size][size];
-            nodeExistence[lod] = new boolean[size][size];
+            dataExistence[lod] = new boolean[size][size];
 
         }
     }
@@ -97,7 +96,7 @@ public class LodRegion implements Serializable {
      * @return
      */
     private boolean setData(byte lod, int posX, int posZ, byte red, byte green, byte blue, short height, short depth, byte generationType, boolean update) {
-        if ((this.generationType[lod][posX][posZ] == 0) || (generationType < this.generationType[lod][posX][posZ])) {
+        if ((this.generationType[lod][posX][posZ] == 0) || (generationType <= this.generationType[lod][posX][posZ])) {
 
             //update the number of node present
             //if (this.generationType[lod][posX][posZ] == 0) numberOfPoints++;
@@ -109,7 +108,7 @@ public class LodRegion implements Serializable {
             this.height[lod][posX][posZ] = height;
             this.depth[lod][posX][posZ] = depth;
             this.generationType[lod][posX][posZ] = generationType;
-            this.nodeExistence[lod][posX][posZ] = true;
+            this.dataExistence[lod][posX][posZ] = true;
 
             //update could be stopped and a single big update could be done at the endnew
             LevelPos levelPos = new LevelPos(lod, posX, posZ);
@@ -205,7 +204,7 @@ public class LodRegion implements Serializable {
             height[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = (short) (tempHeight / numberOfChildren);
             depth[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = (short) (tempDepth / numberOfChildren);
             generationType[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = minGenerationType;
-            nodeExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = true;
+            dataExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = true;
         }
     }
 
@@ -218,19 +217,19 @@ public class LodRegion implements Serializable {
         }
         for (int x = 0; x <= 1; x++) {
             for (int z = 0; z <= 1; z++) {
-                children[x][z] = (nodeExistence[levelPos.detailLevel - 1][2 * levelPos.posX + x][2 * levelPos.posZ + z]);
+                children[x][z] = (dataExistence[levelPos.detailLevel - 1][2 * levelPos.posX + x][2 * levelPos.posZ + z]);
             }
         }
         return children;
     }
 
-    public boolean doesNodeExist(ChunkPos chunkPos) {
-        return doesNodeExist(new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z));
+    public boolean doesDataExist(ChunkPos chunkPos) {
+        return doesDataExist(new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z));
     }
 
-    public boolean doesNodeExist(LevelPos levelPos) {
+    public boolean doesDataExist(LevelPos levelPos) {
         levelPos.regionModule();
-        return nodeExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ];
+        return dataExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ];
     }
 
     /**
@@ -240,7 +239,7 @@ public class LodRegion implements Serializable {
      * @return
      */
     public LevelContainer getLevel(byte lod) {
-        return new LevelContainer(colors[lod], height[lod], depth[lod], generationType[lod]);
+        return new LevelContainer(colors[lod], height[lod], depth[lod], generationType[lod], dataExistence[lod]);
     }
 
     public void addLevel(byte lod, LevelContainer levelContainer) {
@@ -252,6 +251,7 @@ public class LodRegion implements Serializable {
         height[lod] = levelContainer.height;
         depth[lod] = levelContainer.depth;
         generationType[lod] = levelContainer.generationType;
+        dataExistence[lod] = levelContainer.dataExistence;
 
     }
 
@@ -261,6 +261,7 @@ public class LodRegion implements Serializable {
             height[tempLod] = new short[0][0];
             depth[tempLod] = new short[0][0];
             generationType[tempLod] = new byte[0][0];
+            dataExistence[tempLod] = new boolean[0][0];
         }
     }
 }

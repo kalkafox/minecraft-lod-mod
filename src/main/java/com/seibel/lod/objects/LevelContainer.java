@@ -12,11 +12,14 @@ public class LevelContainer implements Serializable {
 
     public final byte[][] generationType;
 
-    public LevelContainer(byte[][][] colors, short[][] height, short[][] depth, byte[][] generationType){
+    public final boolean[][] dataExistence;
+
+    public LevelContainer(byte[][][] colors, short[][] height, short[][] depth, byte[][] generationType, boolean[][] dataExistence){
         this.colors = colors;
         this.height = height;
         this.depth = depth;
         this.generationType = generationType;
+        this.dataExistence = dataExistence;
     }
 
 
