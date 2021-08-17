@@ -163,7 +163,8 @@ public class LodRegion{
             //int minHeight = Integer.MAX_VALUE;
             //int maxHeight = Integer.MIN_VALUE;
 
-            byte minGenerationType = 0;
+            //If a node has some un-generated child then the update result should be at minimum 1
+            byte minGenerationType = 10;
             for (int x = 0; x <= 1; x++) {
                 for (int z = 0; z <= 1; z++) {
                     if (children[x][z]) {
@@ -183,10 +184,11 @@ public class LodRegion{
                         //minDepth = Math.min( depth[lod - 1][newPosX][newPosZ] , maxDepth);
                         //maxDepth = Math.max( depth[lod - 1][newPosX][newPosZ] , minDepth);
 
-                        minGenerationType = (byte) Math.max(minGenerationType, generationType[lod - 1][newPosX][newPosZ]);
+                        minGenerationType = (byte) Math.min(minGenerationType, generationType[lod - 1][newPosX][newPosZ]);
                     }
                 }
             }
+            if(minGenerationType==0) minGenerationType = 1;
             //height[lod][posX][posZ] = minHeight;
             //depth[lod][posX][posZ] = maxDepth;
             generationType[lod][posX][posZ] = minGenerationType;
@@ -209,9 +211,34 @@ public class LodRegion{
         return children;
     }
 
-    private void removeDetailLevel(byte lod, byte[][][] colors, short[][] height, short[][] depth, byte[][] generationType){
+    public boolean doesNodeExist(byte lod, int posX, int posZ){
+        return (generationType[lod][posX][posZ] != 0);
     }
 
-    private void addDetailLevel(byte lod, int posX, int posZ){
+    /**
+     * This will be used to save a level
+     *
+     * @param lod
+     * @return
+     */
+    public LevelContainer getLevel(byte lod){
+        return new LevelContainer(colors[lod], height[lod], depth[lod], generationType[lod]);
+    }
+
+    public void addLevel(byte lod, LevelContainer levelContainer){
+        colors[lod] = levelContainer.colors;
+        height[lod] = levelContainer.height;
+        depth[lod] = levelContainer.depth;
+        generationType[lod] = levelContainer.generationType;
+
+    }
+
+    public void removeDetailLevel(byte lod){
+        for(byte tempLod=0; tempLod <= lod; tempLod++){
+            colors[tempLod] =            new byte[0][0][0];
+            height[tempLod] =            new short[0][0];
+            depth[tempLod] =             new short[0][0];
+            generationType[tempLod] =    new byte[0][0];
+        }
     }
 }

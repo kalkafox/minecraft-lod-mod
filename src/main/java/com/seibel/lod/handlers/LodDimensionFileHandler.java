@@ -101,7 +101,7 @@ public class LodDimensionFileHandler
 	
 	
 	/**
-	 * Return the LodQuadTree region at the given coordinates.
+	 * Return the LodRegion region at the given coordinates.
 	 * (null if the file doesn't exist)
 	 */
 	public LodRegion loadRegionFromFile(RegionPos regionPos)

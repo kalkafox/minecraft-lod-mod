@@ -78,6 +78,7 @@ public class LodConfig
 		public ForgeConfigSpec.DoubleValue brightnessMultiplier;
 		
 		public ForgeConfigSpec.DoubleValue saturationMultiplier;
+
 		
 		
 		
