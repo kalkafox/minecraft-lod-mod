@@ -27,6 +27,8 @@ import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.enums.LodDetail;
 import com.seibel.lod.handlers.LodConfig;
 import com.seibel.lod.objects.LodDataPoint;
+import com.seibel.lod.objects.LodDimension;
+import com.seibel.lod.objects.LodWorld;
 import com.seibel.lod.util.LodThreadFactory;
 import com.seibel.lod.util.LodUtil;
 
@@ -71,12 +73,12 @@ public class LodNodeBuilder
 		
 	}
 	
-	public void generateLodNodeAsync(IChunk chunk, LodQuadTreeWorld lodWorld, IWorld world)
+	public void generateLodNodeAsync(IChunk chunk, LodWorld lodWorld, IWorld world)
 	{
 		generateLodNodeAsync(chunk, lodWorld, world, DistanceGenerationMode.SERVER);
 	}
 	
-	public void generateLodNodeAsync(IChunk chunk, LodQuadTreeWorld lodWorld, IWorld world, DistanceGenerationMode generationMode)
+	public void generateLodNodeAsync(IChunk chunk, LodWorld lodWorld, IWorld world, DistanceGenerationMode generationMode)
 	{
 		if (lodWorld == null || !lodWorld.getIsWorldLoaded())
 			return;
@@ -92,26 +94,21 @@ public class LodNodeBuilder
 			try
 			{
 				DimensionType dim = world.dimensionType();
+
 				
-				List<LodQuadTreeNode> nodeList = generateLodNodeFromChunk(chunk, new LodBuilderConfig(generationMode));
-				
-				LodQuadTreeDimension lodDim;
+				LodDimension lodDim;
 				
 				if (lodWorld.getLodDimension(dim) == null)
 				{
-					lodDim = new LodQuadTreeDimension(dim, lodWorld, regionWidth);
+					lodDim = new LodDimension(dim, lodWorld, regionWidth);
 					lodWorld.addLodDimension(lodDim);
 				}
 				else
 				{
 					lodDim = lodWorld.getLodDimension(dim);
 				}
-				
-				for (LodQuadTreeNode node : nodeList)
-				{
-					lodDim.addNode(node);
-					
-				}
+
+				generateLodNodeFromChunk(lodDim ,chunk, new LodBuilderConfig(generationMode));
 			}
 			catch (IllegalArgumentException | NullPointerException e)
 			{
@@ -131,9 +128,9 @@ public class LodNodeBuilder
 	 *
 	 * @throws IllegalArgumentException thrown if either the chunk or world is null.
 	 */
-	public List<LodQuadTreeNode> generateLodNodeFromChunk(IChunk chunk) throws IllegalArgumentException
+	public void generateLodNodeFromChunk(LodDimension lodDim, IChunk chunk) throws IllegalArgumentException
 	{
-		return generateLodNodeFromChunk(chunk, new LodBuilderConfig());
+		generateLodNodeFromChunk(lodDim, chunk, new LodBuilderConfig());
 	}
 	
 	/**
@@ -141,11 +138,10 @@ public class LodNodeBuilder
 	 *
 	 * @throws IllegalArgumentException thrown if either the chunk or world is null.
 	 */
-	public List<LodQuadTreeNode> generateLodNodeFromChunk(IChunk chunk, LodBuilderConfig config)
+	public void generateLodNodeFromChunk(LodDimension lodDim, IChunk chunk, LodBuilderConfig config)
 			throws IllegalArgumentException
 	{
 		LodDetail detail = LodConfig.CLIENT.maxGenerationDetail.get();
-		List<LodQuadTreeNode> lodNodeList = new ArrayList<>();
 		
 		if (chunk == null)
 			throw new IllegalArgumentException("generateLodFromChunk given a null chunk");
@@ -174,15 +170,16 @@ public class LodNodeBuilder
 						startZ, endX, endZ);
 				depth = 0;
 			}
-			
-			lodNodeList.add(new LodQuadTreeNode((byte) detail.detailLevel,
+			//public Boolean addNode(byte levelOfDetail, int posX, int posZ, LodDataPoint lodDataPoint, DistanceGenerationMode generationMode, boolean update, boolean dontSave)
+			lodDim.addNode((byte) detail.detailLevel,
 					LodUtil.convertLevelPos(chunk.getPos().getMinBlockX() + startX, 0, detail.detailLevel),
 					LodUtil.convertLevelPos(chunk.getPos().getMinBlockZ() + startZ, 0, detail.detailLevel),
-					new LodDataPoint(height, depth, color), config.distanceGenerationMode));
+					new LodDataPoint(height, depth, color),
+					config.distanceGenerationMode,
+					true,
+					false);
 			
 		}
-		
-		return lodNodeList;
 	}
 	
 	// =====================//

@@ -17,6 +17,7 @@
  */
 package com.seibel.lod.handlers;
 
+import com.seibel.lod.objects.LevelContainer;
 import com.seibel.lod.objects.LodDimension;
 import com.seibel.lod.objects.LodRegion;
 import com.seibel.lod.objects.RegionPos;
@@ -113,6 +114,7 @@ public class LodDimensionFileHandler
 		if(FILE_EXTENSION == ".bin"){
 			try {
 				ObjectInputStream is = new ObjectInputStream(new FileInputStream(fileName));
+
 				LodRegion region = (LodRegion) is.readObject();
 				is.close();
 				return region;
@@ -374,5 +376,5 @@ public class LodDimensionFileHandler
 			return null;
 		}
 	}
-	
+
 }

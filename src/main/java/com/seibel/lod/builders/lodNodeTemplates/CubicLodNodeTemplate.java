@@ -22,6 +22,8 @@ import java.awt.Color;
 import com.seibel.lod.enums.LodDetail;
 import com.seibel.lod.enums.ShadingMode;
 import com.seibel.lod.handlers.LodConfig;
+import com.seibel.lod.objects.LodDataPoint;
+import com.seibel.lod.objects.LodDimension;
 import com.seibel.lod.util.LodUtil;
 
 import net.minecraft.client.renderer.BufferBuilder;
@@ -42,22 +44,22 @@ public class CubicLodNodeTemplate extends AbstractLodNodeTemplate
 	
 	@Override
 	public void addLodToBuffer(BufferBuilder buffer,
-			LodQuadTreeDimension lodDim, LodQuadTreeNode lod,
-			double xOffset, double yOffset, double zOffset,
-			boolean debugging, LodDetail detail)
+							   LodDimension lodDim, LodDataPoint lod,
+							   double xOffset, double yOffset, double zOffset,
+							   boolean debugging, LodDetail detail)
 	{
 		AxisAlignedBB bbox;
 		
 		// add each LOD for the detail level
 		bbox = generateBoundingBox(
-				lod.getLodDataPoint().height,
-				lod.getLodDataPoint().depth,
-				lod.width,
+				lod.height,
+				lod.depth,
+				detail.dataPointWidth,
 				xOffset,
 				yOffset,
 				zOffset);
 		
-		Color color = lod.getLodDataPoint().color;
+		Color color = lod.color;
 		if (LodConfig.CLIENT.debugMode.get())
 		{
 			color = LodUtil.DEBUG_DETAIL_LEVEL_COLORS[detail.detailLevel];

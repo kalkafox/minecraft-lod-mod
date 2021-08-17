@@ -21,6 +21,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.seibel.lod.objects.LodDataPoint;
+import com.seibel.lod.objects.LodDimension;
 import org.lwjgl.opengl.GL11;
 
 import com.seibel.lod.builders.worldGeneration.LodNodeGenWorker;
@@ -102,7 +104,7 @@ public class LodNodeBufferBuilder
 	}
 	
 	
-	private LodQuadTreeDimension previousDimension = null;
+	private LodDimension previousDimension = null;
 	
 	
 	/**
@@ -114,7 +116,7 @@ public class LodNodeBufferBuilder
 	 * After the buildable buffers have been generated they must be
 	 * swapped with the drawable buffers in the LodRenderer to be drawn.
 	 */
-	public void generateLodBuffersAsync(LodNodeRenderer renderer, LodQuadTreeDimension lodDim,
+	public void generateLodBuffersAsync(LodNodeRenderer renderer, LodDimension lodDim,
 			BlockPos playerBlockPos, int numbChunksWide)
 	{
 		// only allow one generation process to happen at a time
@@ -193,13 +195,11 @@ public class LodNodeBufferBuilder
 						double yOffset = 0;
 						double zOffset = (LodUtil.CHUNK_WIDTH * j) + startBlockPos.getZ();
 						
-						LodQuadTreeNode lod = lodDim.getLodFromCoordinates(new ChunkPos(chunkX, chunkZ), LodUtil.CHUNK_DETAIL_LEVEL);
-						
-						if (lod == null || lod.complexity == DistanceGenerationMode.NONE)
+						if (lodDim.hasThisPositionBeenGenerated(new ChunkPos(chunkX, chunkZ)))
 						{
 							// generate a new chunk if no chunk currently exists
 							// and we aren't waiting on any other chunks to generate
-							if (lod == null && numberOfChunksWaitingToGenerate.get() < maxChunkGenRequests)
+							if (numberOfChunksWaitingToGenerate.get() < maxChunkGenRequests)
 							{
 								ChunkPos pos = new ChunkPos(chunkX, chunkZ);
 								
@@ -298,7 +298,7 @@ public class LodNodeBufferBuilder
 							currentBuffer = buildableFarBuffer;
 						
 						// determine detail level should this LOD be drawn at
-						int distance = (int) Math.sqrt(Math.pow((playerBlockPosRounded.getX() - lod.getCenter().getX()), 2) + Math.pow((playerBlockPosRounded.getZ() - lod.getCenter().getZ()), 2));
+						int distance = (int) Math.sqrt(Math.pow((playerBlockPosRounded.getX() - chunkX*16 + 8), 2) + Math.pow((playerBlockPosRounded.getZ() - chunkZ*16 + 8), 2));
 						LodDetail detail = LodDetail.getDetailForDistance(LodConfig.CLIENT.maxDrawDetail.get(), distance, maxBlockDistance);
 						
 						
@@ -308,19 +308,10 @@ public class LodNodeBufferBuilder
 							int startX = detail.startX[k];
 							int startZ = detail.startZ[k];
 							
-							// get the QuadTree location of this
-							LodQuadTree lodTree = lodDim.getLevelFromPos(
-									LodUtil.convertLevelPos((int) xOffset + startX, 0, LodUtil.CHUNK_DETAIL_LEVEL),
-									LodUtil.convertLevelPos((int) zOffset + startZ, 0, LodUtil.CHUNK_DETAIL_LEVEL),
-									LodUtil.CHUNK_DETAIL_LEVEL);
-							
-							if (lodTree == null)
-								continue;
-							
-							LodQuadTreeNode newLod = lodTree.getNodeAtPos(
+							LodDataPoint newLod = lodDim.getLodFromCoordinates(
 									LodUtil.convertLevelPos((int) xOffset + startX, 0, detail.detailLevel),
 									LodUtil.convertLevelPos((int) zOffset + startZ, 0, detail.detailLevel),
-									detail.detailLevel);
+									(byte) detail.detailLevel);
 							
 							if (newLod != null)
 							{

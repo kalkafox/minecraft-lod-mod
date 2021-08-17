@@ -31,6 +31,7 @@ import com.seibel.lod.builders.LodNodeBufferBuilder;
 import com.seibel.lod.builders.LodNodeBuilder;
 import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.handlers.LodConfig;
+import com.seibel.lod.objects.LodDimension;
 import com.seibel.lod.proxy.ClientProxy;
 import com.seibel.lod.render.LodNodeRenderer;
 import com.seibel.lod.util.LodThreadFactory;
@@ -87,7 +88,7 @@ public class LodNodeGenWorker implements IWorker
 
     public LodNodeGenWorker(ChunkPos newPos, LodNodeRenderer newLodRenderer,
 							LodNodeBuilder newLodBuilder, LodNodeBufferBuilder newLodBufferBuilder,
-							LodQuadTreeDimension newLodDimension, ServerWorld newServerWorld)
+							LodDimension newLodDimension, ServerWorld newServerWorld)
     {
     	// just a few sanity checks
         if (newPos == null)
@@ -156,7 +157,7 @@ public class LodNodeGenWorker implements IWorker
     private class LodChunkGenThread implements Runnable
     {
     	public final ServerWorld serverWorld;
-        public final LodQuadTreeDimension lodDim;
+        public final LodDimension lodDim;
         public final LodNodeBuilder lodNodeBuilder;
         public final LodNodeRenderer lodRenderer;
         private LodNodeBufferBuilder lodBufferBuilder;
@@ -165,7 +166,7 @@ public class LodNodeGenWorker implements IWorker
     	
     	public LodChunkGenThread(ChunkPos newPos, LodNodeRenderer newLodRenderer,
         		LodNodeBuilder newLodBuilder, LodNodeBufferBuilder newLodBufferBuilder,
-        		LodQuadTreeDimension newLodDimension, ServerWorld newServerWorld)
+        		LodDimension newLodDimension, ServerWorld newServerWorld)
     	{
     		pos = newPos;
     		lodRenderer = newLodRenderer;
@@ -336,28 +337,21 @@ public class LodNodeGenWorker implements IWorker
 			
 			chunk.setHeightmap(LodUtil.DEFAULT_HEIGHTMAP, heightmap.getRawData());
 			
-			
-			List<LodQuadTreeNode> nodeList;
+
 			if (!inTheEnd)
 			{
-				nodeList = lodNodeBuilder.generateLodNodeFromChunk(chunk, new LodBuilderConfig(true, true, false));
+				lodNodeBuilder.generateLodNodeFromChunk(lodDim, chunk, new LodBuilderConfig(true, true, false));
 			}
 			else
 			{
 				// if we are in the end, don't generate any chunks.
 				// Since we don't know where the islands are, everything
 				// generates the same and it looks really bad.
-				nodeList = lodNodeBuilder.generateLodNodeFromChunk(chunk, new LodBuilderConfig(true, true, false));
+				lodNodeBuilder.generateLodNodeFromChunk(lodDim, chunk, new LodBuilderConfig(true, true, false));
 			}
 			
 			
 //			long startTime = System.currentTimeMillis();
-			
-			for(LodQuadTreeNode node : nodeList)
-			{
-				lodDim.addNode(node);
-			}
-			
 //			long endTime = System.currentTimeMillis();
 //			System.out.println(endTime - startTime);
 		}
@@ -390,10 +384,7 @@ public class LodNodeGenWorker implements IWorker
 			IceAndSnowFeature snowFeature = new IceAndSnowFeature(NoFeatureConfig.CODEC);
 			snowFeature.place(lodServerWorld, chunkGen, serverWorld.random, chunk.getPos().getWorldPosition(), null);
 
-			List<LodQuadTreeNode> nodeList = lodNodeBuilder.generateLodNodeFromChunk(chunk, new LodBuilderConfig());
-			for(LodQuadTreeNode node : nodeList) {
-				lodDim.addNode(node);
-			}
+			lodNodeBuilder.generateLodNodeFromChunk(lodDim, chunk, new LodBuilderConfig());
 		}
 		
 		
@@ -519,11 +510,7 @@ public class LodNodeGenWorker implements IWorker
 			
 			// generate a Lod like normal
 
-			List<LodQuadTreeNode> nodeList = lodNodeBuilder.generateLodNodeFromChunk(chunk, new LodBuilderConfig());
-
-			for(LodQuadTreeNode node : nodeList) {
-				lodDim.addNode(node);
-			}
+			lodNodeBuilder.generateLodNodeFromChunk(lodDim, chunk, new LodBuilderConfig());
 		}
 		
 		

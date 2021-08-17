@@ -17,6 +17,8 @@
  */
 package com.seibel.lod.proxy;
 
+import com.seibel.lod.objects.LodDimension;
+import com.seibel.lod.objects.LodWorld;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -52,7 +54,7 @@ public class ClientProxy
 {
 	public static final Logger LOGGER = LogManager.getLogger("LOD");
 	
-	private static LodQuadTreeWorld lodWorld = new LodQuadTreeWorld();
+	private static LodWorld lodWorld = new LodWorld();
 	private static LodNodeBuilder lodNodeBuilder = new LodNodeBuilder();
 	private static LodNodeBufferBuilder lodBufferBuilder = new LodNodeBufferBuilder(lodNodeBuilder);
 	private static LodNodeRenderer renderer = new LodNodeRenderer(lodBufferBuilder);
@@ -101,7 +103,7 @@ public class ClientProxy
 			return;
 		}
 		
-		LodQuadTreeDimension lodDim = lodWorld.getLodDimension(mc.player.level.dimensionType());
+		LodDimension lodDim = lodWorld.getLodDimension(mc.player.level.dimensionType());
 		if (lodDim == null)
 			return;
 		
@@ -233,7 +235,7 @@ public class ClientProxy
 	// public getters //
 	//================//
 	
-	public static LodQuadTreeWorld getLodWorld()
+	public static LodWorld getLodWorld()
 	{
 		return lodWorld;
 	}

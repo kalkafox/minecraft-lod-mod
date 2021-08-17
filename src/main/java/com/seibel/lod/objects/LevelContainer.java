@@ -19,4 +19,5 @@ public class LevelContainer implements Serializable {
         this.generationType = generationType;
     }
 
+
 }

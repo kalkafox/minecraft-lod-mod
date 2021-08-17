@@ -19,10 +19,8 @@ package com.seibel.lod.objects;
 
 import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.handlers.LodDimensionFileHandler;
-import com.seibel.lod.handlers.LodQuadTreeDimensionFileHandler;
 import com.seibel.lod.util.LodUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.DimensionType;
 import net.minecraft.world.server.ServerChunkProvider;
@@ -30,8 +28,6 @@ import net.minecraft.world.server.ServerWorld;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * This object holds all loaded LOD regions
@@ -232,7 +228,7 @@ public class LodDimension
 	 * Returns null if the region doesn't exist
 	 * or is outside the loaded area.
 	 */
-	public LodDimension getRegion(RegionPos regionPos)
+	public LodRegion getRegion(RegionPos regionPos)
 	{
 		int xIndex = (regionPos.x - center.x) + halfWidth;
 		int zIndex = (regionPos.z - center.z) + halfWidth;
@@ -243,11 +239,12 @@ public class LodDimension
 		
 		if (regions[xIndex][zIndex] == null)
 		{
+
 			regions[xIndex][zIndex] = getRegionFromFile(regionPos);
 			if (regions[xIndex][zIndex] == null)
 			{
 				/**TODO the value is currently 0 but should be determinated by the distance of the player)*/
-				regions[xIndex][zIndex] = new LodDimension(0,regionPos);
+				regions[xIndex][zIndex] = new LodRegion((byte) 0,regionPos);
 			}
 		}
 
@@ -353,7 +350,7 @@ public class LodDimension
 	 * Returns null if the LodChunk doesn't exist or
 	 * is outside the loaded area.
 	 */
-	public LodRegion getLodFromCoordinates(ChunkPos chunkPos)
+	public LodDataPoint getLodFromCoordinates(ChunkPos chunkPos)
 	{
 		return getLodFromCoordinates(chunkPos, LodUtil.CHUNK_DETAIL_LEVEL);
 	}
@@ -377,7 +374,7 @@ public class LodDimension
 			return null;
 		}
 
-		return region.getNodeAtChunkPos(chunkPos);
+		return region.getData(chunkPos);
 	}
 
 	/**
@@ -387,7 +384,7 @@ public class LodDimension
 	 * Returns null if the LodChunk doesn't exist or
 	 * is outside the loaded area.
 	 */
-	public LodDataPoint getLodFromCoordinates(int posX, int posZ, int detailLevel)
+	public LodDataPoint getLodFromCoordinates(int posX, int posZ, byte detailLevel)
 	{
 		if (detailLevel > LodUtil.REGION_DETAIL_LEVEL)
 			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
@@ -399,7 +396,7 @@ public class LodDimension
 			return null;
 		}
 
-		return region.getData(posX, posZ, detailLevel);
+		return region.getData(detailLevel, posX, posZ);
 	}
 
 	/**

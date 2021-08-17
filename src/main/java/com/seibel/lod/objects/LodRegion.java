@@ -1,6 +1,8 @@
 package com.seibel.lod.objects;
 
 import com.seibel.lod.util.LodUtil;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.chunk.Chunk;
 
 import java.awt.*;
 import java.io.Serializable;
@@ -12,7 +14,7 @@ import java.io.Serializable;
  * 0 for x, 1 for y, 2 for z in 3D
  */
 
-public class LodRegion{
+public class LodRegion implements Serializable{
     //x coord,
     private byte minLevelOfDetail;
     private static final byte POSSIBLE_LOD = 10;
@@ -121,6 +123,10 @@ public class LodRegion{
         }
     }
 
+    public LodDataPoint getData(ChunkPos chunkPos){
+        return getData(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z);
+    }
+
     /**
      * This method will return the data in the position relative to the level of detail
      * @param lod
@@ -211,6 +217,10 @@ public class LodRegion{
         return children;
     }
 
+    public boolean doesNodeExist(ChunkPos chunkPos){
+        return doesNodeExist(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z);
+    }
+
     public boolean doesNodeExist(byte lod, int posX, int posZ){
         return (generationType[lod][posX][posZ] != 0);
     }
@@ -226,6 +236,10 @@ public class LodRegion{
     }
 
     public void addLevel(byte lod, LevelContainer levelContainer){
+        if(lod < minLevelOfDetail-1){
+            throw new IllegalArgumentException("addLevel requires a level that is at least the minimum level of the region -1 ");
+        }
+        if(lod == minLevelOfDetail-1) minLevelOfDetail = lod;
         colors[lod] = levelContainer.colors;
         height[lod] = levelContainer.height;
         depth[lod] = levelContainer.depth;
