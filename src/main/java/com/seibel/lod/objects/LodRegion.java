@@ -77,6 +77,9 @@ public class LodRegion implements Serializable {
      * @return
      */
     public boolean setData(LevelPos levelPos, LodDataPoint dataPoint, byte generationType, boolean update) {
+        System.out.println("Level pos add 1 " + levelPos);
+        levelPos.regionModule();
+        System.out.println("Level pos add 2 " + levelPos);
         return setData(levelPos.detailLevel, levelPos.posX, levelPos.posZ, (byte) (dataPoint.color.getRed() - 128), (byte) (dataPoint.color.getGreen() - 128), (byte) (dataPoint.color.getBlue() - 128), dataPoint.height, dataPoint.depth, generationType, update);
     }
 
@@ -95,7 +98,7 @@ public class LodRegion implements Serializable {
      * @param update
      * @return
      */
-    public boolean setData(byte lod, int posX, int posZ, byte red, byte green, byte blue, short height, short depth, byte generationType, boolean update) {
+    private boolean setData(byte lod, int posX, int posZ, byte red, byte green, byte blue, short height, short depth, byte generationType, boolean update) {
         if ((this.generationType[lod][posX][posZ] == 0) || (generationType < this.generationType[lod][posX][posZ])) {
 
             //update the number of node present
@@ -118,8 +121,12 @@ public class LodRegion implements Serializable {
                     update(levelPos);
                 }
             }
+            //System.out.print("created ");
+            //System.out.println(new LevelPos(lod,posX,posZ));
             return true; //added
         } else {
+            //System.out.print("not created ");
+            //System.out.println(new LevelPos(lod,posX,posZ));
             return false; //not added
         }
     }
@@ -147,6 +154,7 @@ public class LodRegion implements Serializable {
      * @return the data at the relative pos and level
      */
     public LodDataPoint getData(LevelPos levelPos) {
+        levelPos.regionModule();
         return new LodDataPoint(
                 height[levelPos.detailLevel][levelPos.posX][levelPos.posZ],
                 depth[levelPos.detailLevel][levelPos.posX][levelPos.posZ],
@@ -162,6 +170,7 @@ public class LodRegion implements Serializable {
         }
     */
     private void update(LevelPos levelPos) {
+        levelPos.regionModule();
         boolean[][] children = getChildren(levelPos);
         int numberOfChild = 0;
 
@@ -215,6 +224,7 @@ public class LodRegion implements Serializable {
     }
 
     private boolean[][] getChildren(LevelPos levelPos) {
+        levelPos.regionModule();
         boolean[][] children = new boolean[2][2];
         int numberOfChild = 0;
         if (minLevelOfDetail == levelPos.detailLevel) {
@@ -233,6 +243,7 @@ public class LodRegion implements Serializable {
     }
 
     public boolean doesNodeExist(LevelPos levelPos) {
+        levelPos.regionModule();
         return nodeExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ];
     }
 

@@ -307,7 +307,7 @@ public class LodDimension
 	public Boolean addNode(LevelPos levelPos, LodDataPoint lodDataPoint, DistanceGenerationMode generationMode, boolean update, boolean dontSave)
 	{
 		// don't continue if the region can't be saved
-		RegionPos regionPos = LodUtil.convertGenericPosToRegionPos(levelPos.posX, levelPos.posZ, levelPos.detailLevel);
+		RegionPos regionPos = levelPos.getRegionPos();
 		if (!regionIsInRange(regionPos.x, regionPos.z))
 		{
 			return false;
@@ -389,7 +389,7 @@ public class LodDimension
 		if (levelPos.detailLevel > LodUtil.REGION_DETAIL_LEVEL)
 			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + levelPos.detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
 
-		LodRegion region = getRegion(LodUtil.convertGenericPosToRegionPos(levelPos.posX, levelPos.posZ, levelPos.detailLevel));
+		LodRegion region = getRegion(levelPos.getRegionPos());
 
 		if(region == null)
 		{
@@ -420,7 +420,7 @@ public class LodDimension
 
 	public boolean hasThisPositionBeenGenerated(LevelPos levelPos)
 	{
-		LodRegion region = getRegion(LodUtil.convertGenericPosToRegionPos(levelPos.posX, levelPos.posZ, levelPos.detailLevel));
+		LodRegion region = getRegion(levelPos.getRegionPos());
 
 		if(region == null)
 		{

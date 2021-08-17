@@ -302,16 +302,18 @@ public class LodNodeBufferBuilder
 						int distance = (int) Math.sqrt(Math.pow((playerBlockPosRounded.getX() - chunkX*16 + 8), 2) + Math.pow((playerBlockPosRounded.getZ() - chunkZ*16 + 8), 2));
 
 						LodDetail detail = LodDetail.getDetailForDistance(LodConfig.CLIENT.maxDrawDetail.get(), distance, maxBlockDistance);
+						//LodDetail detail = LodDetail.FULL;
 						for (int k = 0; k < detail.dataPointLengthCount * detail.dataPointLengthCount; k++)
 						{
 							// how much to offset this LOD by
 							int startX = detail.startX[k];
 							int startZ = detail.startZ[k];
 							LevelPos levelPos = new LevelPos((byte) 0, (int) (xOffset + startX),  (int) (xOffset + startZ));
-							levelPos.convert((byte) detail.detailLevel);
 
-							if (lodDim.hasThisPositionBeenGenerated(levelPos)){
-								LodDataPoint newLod = lodDim.getLodFromCoordinates(levelPos);
+							levelPos.convert((byte) detail.detailLevel);
+							if (lodDim.hasThisPositionBeenGenerated(levelPos.clone())){
+								LodDataPoint newLod = lodDim.getLodFromCoordinates(levelPos.clone());
+								System.out.println(levelPos.toString() + newLod.toString());
 								/*
 								for(int g = 0; g<=9; g++){
 									LodDataPoint newLod2 = lodDim.getLodFromCoordinates(
