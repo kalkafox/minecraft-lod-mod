@@ -22,8 +22,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.HashSet;
 
-import com.seibel.lod.objects.LodDataPoint;
-import com.seibel.lod.objects.LodDimension;
+import com.seibel.lod.objects.*;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.NVFogDistance;
@@ -37,8 +36,6 @@ import com.seibel.lod.enums.FogDrawOverride;
 import com.seibel.lod.enums.FogQuality;
 import com.seibel.lod.handlers.LodConfig;
 import com.seibel.lod.handlers.ReflectionHandler;
-import com.seibel.lod.objects.NearFarFogSettings;
-import com.seibel.lod.objects.NearFarVbos;
 import com.seibel.lod.proxy.ClientProxy;
 import com.seibel.lod.util.LodUtil;
 
@@ -804,9 +801,9 @@ public class LodNodeRenderer
 		{
 			for(int z = centerChunk.z - chunkRenderDist; z < centerChunk.z + chunkRenderDist; z++)
 			{
-				LodDataPoint lod = lodDim.getLodFromCoordinates(new ChunkPos(x, z), 4);
-				if (lod != null)
+				if (lodDim.hasThisPositionBeenGenerated(new LevelPos((byte) 4,x,z)))
 				{
+					LodDataPoint lod = lodDim.getLodFromCoordinates( new LevelPos((byte) 4, x,z));
 					short lodHighestPoint = lod.height;
 					
 					if (playerPos.getY() < lodHighestPoint)

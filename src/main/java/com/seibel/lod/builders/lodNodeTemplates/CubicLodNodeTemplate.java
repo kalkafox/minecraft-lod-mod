@@ -54,7 +54,7 @@ public class CubicLodNodeTemplate extends AbstractLodNodeTemplate
 		bbox = generateBoundingBox(
 				lod.height,
 				lod.depth,
-				(int) Math.pow(2,detail.detailLevel),
+				detail.dataPointWidth,
 				xOffset,
 				yOffset,
 				zOffset);

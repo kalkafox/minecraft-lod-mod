@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.enums.LodDetail;
 import com.seibel.lod.handlers.LodConfig;
+import com.seibel.lod.objects.LevelPos;
 import com.seibel.lod.objects.LodDataPoint;
 import com.seibel.lod.objects.LodDimension;
 import com.seibel.lod.objects.LodWorld;
@@ -171,9 +172,11 @@ public class LodNodeBuilder
 				depth = 0;
 			}
 			//public Boolean addNode(byte levelOfDetail, int posX, int posZ, LodDataPoint lodDataPoint, DistanceGenerationMode generationMode, boolean update, boolean dontSave)
-			lodDim.addNode((byte) detail.detailLevel,
-					LodUtil.convertLevelPos(chunk.getPos().getMinBlockX() + startX, 0, detail.detailLevel),
-					LodUtil.convertLevelPos(chunk.getPos().getMinBlockZ() + startZ, 0, detail.detailLevel),
+			LevelPos levelPos = new LevelPos(
+					(byte) detail.detailLevel,
+					chunk.getPos().getMinBlockX() + startX,
+					chunk.getPos().getMinBlockZ() + startZ);
+			lodDim.addNode(levelPos,
 					new LodDataPoint(height, depth, color),
 					config.distanceGenerationMode,
 					true,

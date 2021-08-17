@@ -304,10 +304,10 @@ public class LodDimension
 	 * stored in the LOD. If an LOD already exists at the given
 	 * coordinates it will be overwritten.
 	 */
-	public Boolean addNode(byte levelOfDetail, int posX, int posZ, LodDataPoint lodDataPoint, DistanceGenerationMode generationMode, boolean update, boolean dontSave)
+	public Boolean addNode(LevelPos levelPos, LodDataPoint lodDataPoint, DistanceGenerationMode generationMode, boolean update, boolean dontSave)
 	{
 		// don't continue if the region can't be saved
-		RegionPos regionPos = LodUtil.convertGenericPosToRegionPos(posX, posZ, levelOfDetail);
+		RegionPos regionPos = LodUtil.convertGenericPosToRegionPos(levelPos.posX, levelPos.posZ, levelPos.detailLevel);
 		if (!regionIsInRange(regionPos.x, regionPos.z))
 		{
 			return false;
@@ -321,7 +321,7 @@ public class LodDimension
 			region = new LodRegion((byte) 0,regionPos);
 			addOrOverwriteRegion(region);
 		}
-		boolean nodeAdded = region.setData(levelOfDetail,posX,posZ,lodDataPoint,(byte) generationMode.complexity,true);
+		boolean nodeAdded = region.setData(levelPos,lodDataPoint,(byte) generationMode.complexity,true);
 
 		// only save valid LODs to disk
 		if (!dontSave && fileHandler != null)
@@ -384,19 +384,19 @@ public class LodDimension
 	 * Returns null if the LodChunk doesn't exist or
 	 * is outside the loaded area.
 	 */
-	public LodDataPoint getLodFromCoordinates(int posX, int posZ, byte detailLevel)
+	public LodDataPoint getLodFromCoordinates(LevelPos levelPos)
 	{
-		if (detailLevel > LodUtil.REGION_DETAIL_LEVEL)
-			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
+		if (levelPos.detailLevel > LodUtil.REGION_DETAIL_LEVEL)
+			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + levelPos.detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
 
-		LodRegion region = getRegion(LodUtil.convertGenericPosToRegionPos(posX, posZ, detailLevel));
+		LodRegion region = getRegion(LodUtil.convertGenericPosToRegionPos(levelPos.posX, levelPos.posZ, levelPos.detailLevel));
 
 		if(region == null)
 		{
 			return null;
 		}
 
-		return region.getData(detailLevel, posX, posZ);
+		return region.getData(levelPos);
 	}
 
 	/**
@@ -411,7 +411,23 @@ public class LodDimension
 			return false;
 		}
 
-		return region.doesNodeExist(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z);
+		return region.doesNodeExist(new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z));
+	}
+
+	/**
+	 * return true if and only if the node at that position exist
+	 */
+
+	public boolean hasThisPositionBeenGenerated(LevelPos levelPos)
+	{
+		LodRegion region = getRegion(LodUtil.convertGenericPosToRegionPos(levelPos.posX, levelPos.posZ, levelPos.detailLevel));
+
+		if(region == null)
+		{
+			return false;
+		}
+
+		return region.doesNodeExist(levelPos);
 	}
 
 	/**

@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.seibel.lod.objects.LevelPos;
 import com.seibel.lod.objects.LodDataPoint;
 import com.seibel.lod.objects.LodDimension;
 import org.lwjgl.opengl.GL11;
@@ -299,22 +300,26 @@ public class LodNodeBufferBuilder
 
 						// determine detail level should this LOD be drawn at
 						int distance = (int) Math.sqrt(Math.pow((playerBlockPosRounded.getX() - chunkX*16 + 8), 2) + Math.pow((playerBlockPosRounded.getZ() - chunkZ*16 + 8), 2));
+
 						LodDetail detail = LodDetail.getDetailForDistance(LodConfig.CLIENT.maxDrawDetail.get(), distance, maxBlockDistance);
-
-
 						for (int k = 0; k < detail.dataPointLengthCount * detail.dataPointLengthCount; k++)
 						{
 							// how much to offset this LOD by
 							int startX = detail.startX[k];
 							int startZ = detail.startZ[k];
+							LevelPos levelPos = new LevelPos((byte) 0, (int) (xOffset + startX),  (int) (xOffset + startZ));
+							levelPos.convert((byte) detail.detailLevel);
 
-							LodDataPoint newLod = lodDim.getLodFromCoordinates(
-									LodUtil.convertLevelPos((int) xOffset + startX, 0, detail.detailLevel),
-									LodUtil.convertLevelPos((int) zOffset + startZ, 0, detail.detailLevel),
-									(byte) detail.detailLevel);
-
-							if (newLod != null)
-							{
+							if (lodDim.hasThisPositionBeenGenerated(levelPos)){
+								LodDataPoint newLod = lodDim.getLodFromCoordinates(levelPos);
+								/*
+								for(int g = 0; g<=9; g++){
+									LodDataPoint newLod2 = lodDim.getLodFromCoordinates(
+											0,
+											0,
+											(byte) g);
+									System.out.println(g + " " + newLod2);
+								}*/
 								// get the desired LodTemplate and
 								// add this LOD to the buffer
 								LodConfig.CLIENT.lodTemplate.get().
