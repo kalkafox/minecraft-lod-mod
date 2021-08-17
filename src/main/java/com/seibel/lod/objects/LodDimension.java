@@ -25,6 +25,7 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.DimensionType;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerWorld;
+import org.lwjgl.system.CallbackI;
 
 import java.io.File;
 import java.io.IOException;
@@ -304,10 +305,11 @@ public class LodDimension
 	 * stored in the LOD. If an LOD already exists at the given
 	 * coordinates it will be overwritten.
 	 */
-	public Boolean addNode(LevelPos levelPos, LodDataPoint lodDataPoint, DistanceGenerationMode generationMode, boolean update, boolean dontSave)
+	public Boolean addData(LevelPos levelPos, LodDataPoint lodDataPoint, DistanceGenerationMode generationMode, boolean update, boolean dontSave)
 	{
 		// don't continue if the region can't be saved
 		RegionPos regionPos = levelPos.getRegionPos();
+
 		if (!regionIsInRange(regionPos.x, regionPos.z))
 		{
 			return false;
@@ -322,6 +324,7 @@ public class LodDimension
 			addOrOverwriteRegion(region);
 		}
 		boolean nodeAdded = region.setData(levelPos,lodDataPoint,(byte) generationMode.complexity,true);
+		System.out.println("Node to generate " + levelPos.toString() + " " + nodeAdded);
 
 		// only save valid LODs to disk
 		if (!dontSave && fileHandler != null)
@@ -350,9 +353,10 @@ public class LodDimension
 	 * Returns null if the LodChunk doesn't exist or
 	 * is outside the loaded area.
 	 */
-	public LodDataPoint getLodFromCoordinates(ChunkPos chunkPos)
+	public LodDataPoint getData(ChunkPos chunkPos)
 	{
-		return getLodFromCoordinates(chunkPos, LodUtil.CHUNK_DETAIL_LEVEL);
+		LevelPos levelPos = new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z);
+		return getData(levelPos);
 	}
 
 	/**
@@ -362,34 +366,13 @@ public class LodDimension
 	 * Returns null if the LodChunk doesn't exist or
 	 * is outside the loaded area.
 	 */
-	public LodDataPoint getLodFromCoordinates(ChunkPos chunkPos, int detailLevel)
-	{
-		if (detailLevel > LodUtil.REGION_DETAIL_LEVEL)
-			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
-
-    	LodRegion region = getRegion(LodUtil.convertGenericPosToRegionPos(chunkPos.x, chunkPos.z, LodUtil.CHUNK_DETAIL_LEVEL));
-
-		if(region == null)
-		{
-			return null;
-		}
-
-		return region.getData(chunkPos);
-	}
-
-	/**
-	 * Get the LodNodeData at the given X and Z coordinates
-	 * in this dimension.
-	 * <br>
-	 * Returns null if the LodChunk doesn't exist or
-	 * is outside the loaded area.
-	 */
-	public LodDataPoint getLodFromCoordinates(LevelPos levelPos)
+	public LodDataPoint getData(LevelPos levelPos)
 	{
 		if (levelPos.detailLevel > LodUtil.REGION_DETAIL_LEVEL)
 			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + levelPos.detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
 
 		LodRegion region = getRegion(levelPos.getRegionPos());
+
 
 		if(region == null)
 		{

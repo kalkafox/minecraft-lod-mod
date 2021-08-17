@@ -18,8 +18,6 @@
 package com.seibel.lod.builders;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -178,8 +176,7 @@ public class LodNodeBuilder
 					chunk.getPos().getMinBlockZ() + startZ);
 			levelPos.convert((byte) detail.detailLevel);
 
-			System.out.println("Level pos before " + levelPos);
-			lodDim.addNode(levelPos,
+			lodDim.addData(levelPos.clone(),
 					new LodDataPoint(height, depth, color),
 					config.distanceGenerationMode,
 					true,

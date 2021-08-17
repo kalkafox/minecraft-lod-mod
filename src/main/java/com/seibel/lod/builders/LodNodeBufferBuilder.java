@@ -27,7 +27,6 @@ import com.seibel.lod.objects.LodDimension;
 import org.lwjgl.opengl.GL11;
 
 import com.seibel.lod.builders.worldGeneration.LodNodeGenWorker;
-import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.enums.LodDetail;
 import com.seibel.lod.handlers.LodConfig;
 import com.seibel.lod.objects.NearFarVbos;
@@ -308,12 +307,11 @@ public class LodNodeBufferBuilder
 							// how much to offset this LOD by
 							int startX = detail.startX[k];
 							int startZ = detail.startZ[k];
-							LevelPos levelPos = new LevelPos((byte) 0, (int) (xOffset + startX),  (int) (xOffset + startZ));
-
+							LevelPos levelPos = new LevelPos((byte) 0, (int) (xOffset + startX),  (int) (zOffset + startZ));
 							levelPos.convert((byte) detail.detailLevel);
 							if (lodDim.hasThisPositionBeenGenerated(levelPos.clone())){
-								LodDataPoint newLod = lodDim.getLodFromCoordinates(levelPos.clone());
-								System.out.println(levelPos.toString() + newLod.toString());
+								LodDataPoint newLod = lodDim.getData(levelPos.clone());
+								//System.out.println(levelPos.toString() + " " + newLod.toString());
 								/*
 								for(int g = 0; g<=9; g++){
 									LodDataPoint newLod2 = lodDim.getLodFromCoordinates(

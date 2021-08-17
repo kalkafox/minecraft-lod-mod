@@ -77,9 +77,7 @@ public class LodRegion implements Serializable {
      * @return
      */
     public boolean setData(LevelPos levelPos, LodDataPoint dataPoint, byte generationType, boolean update) {
-        System.out.println("Level pos add 1 " + levelPos);
         levelPos.regionModule();
-        System.out.println("Level pos add 2 " + levelPos);
         return setData(levelPos.detailLevel, levelPos.posX, levelPos.posZ, (byte) (dataPoint.color.getRed() - 128), (byte) (dataPoint.color.getGreen() - 128), (byte) (dataPoint.color.getBlue() - 128), dataPoint.height, dataPoint.depth, generationType, update);
     }
 
@@ -102,7 +100,7 @@ public class LodRegion implements Serializable {
         if ((this.generationType[lod][posX][posZ] == 0) || (generationType < this.generationType[lod][posX][posZ])) {
 
             //update the number of node present
-            if (this.generationType[lod][posX][posZ] == 0) numberOfPoints++;
+            //if (this.generationType[lod][posX][posZ] == 0) numberOfPoints++;
 
             //add the node data
             this.colors[lod][posX][posZ][0] = red;
@@ -170,54 +168,42 @@ public class LodRegion implements Serializable {
         }
     */
     private void update(LevelPos levelPos) {
+
         levelPos.regionModule();
         boolean[][] children = getChildren(levelPos);
-        int numberOfChild = 0;
+        int numberOfChildren = 0;
 
+        /**TODO add the ability to change how the heigth and depth are determinated (for example min or max)**/
+        byte minGenerationType = 10;
+        int tempRed = 0;
+        int tempGreen = 0;
+        int tempBlue = 0;
+        int tempHeight = 0;
+        int tempDepth = 0;
         for (int x = 0; x <= 1; x++) {
             for (int z = 0; z <= 1; z++) {
                 if (children[x][z]) {
-                    numberOfChild++;
+                    numberOfChildren++;
+                    int newPosX = 2 * levelPos.posX + x;
+                    int newPosZ = 2 * levelPos.posZ + z;
+                    byte newLod = (byte) (levelPos.detailLevel - 1);
+
+                    tempRed += colors[newLod][newPosX][newPosZ][0];
+                    tempGreen += colors[newLod][newPosX][newPosZ][1];
+                    tempBlue += colors[newLod][newPosX][newPosZ][2];
+                    tempHeight += height[newLod][newPosX][newPosZ];
+                    tempDepth += depth[newLod][newPosX][newPosZ];
+                    minGenerationType = (byte) Math.min(minGenerationType, generationType[newLod][newPosX][newPosZ]);
                 }
             }
         }
 
-        if (numberOfChild > 0) {
-
-            //int minDepth = Integer.MAX_VALUE;
-            //int maxDepth = Integer.MIN_VALUE;
-            //int minHeight = Integer.MAX_VALUE;
-            //int maxHeight = Integer.MIN_VALUE;
-
-            //If a node has some un-generated child then the update result should be at minimum 1
-            byte minGenerationType = 10;
-            for (int x = 0; x <= 1; x++) {
-                for (int z = 0; z <= 1; z++) {
-                    if (children[x][z]) {
-                        int newPosX = 2 * levelPos.posX + x;
-                        int newPosZ = 2 * levelPos.posZ + z;
-                        byte newLod = (byte) (levelPos.detailLevel - 1);
-                        for (int col = 0; col <= 2; col++) {
-                            colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][col] += (byte) (colors[newLod][newPosX][newPosZ][col] / numberOfChild);
-                        }
-
-                        //TODO ability to change between mean, max and min.
-
-                        height[levelPos.detailLevel][levelPos.posX][levelPos.posZ] += (short) (height[newLod][newPosX][newPosZ] / numberOfChild);
-                        //minHeight = Math.min( height[lod - 1][newPosX][newPosZ] , maxHeight);
-                        //maxHeight = Math.max( height[lod - 1][newPosX][newPosZ] , minHeight);
-
-                        depth[levelPos.detailLevel][levelPos.posX][levelPos.posZ] += (short) (depth[newLod][newPosX][newPosZ] / numberOfChild);
-                        //minDepth = Math.min( depth[lod - 1][newPosX][newPosZ] , maxDepth);
-                        //maxDepth = Math.max( depth[lod - 1][newPosX][newPosZ] , minDepth);
-
-                        minGenerationType = (byte) Math.min(minGenerationType, generationType[newLod][newPosX][newPosZ]);
-                    }
-                }
-            }
-            if (minGenerationType == 0) minGenerationType = 1;
-            //height[lod][posX][posZ] = minHeight;
-            //depth[lod][posX][posZ] = maxDepth;
+        if (numberOfChildren > 0) {
+            colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][0] = (byte) (tempRed / numberOfChildren);
+            colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][1] = (byte) (tempGreen / numberOfChildren);
+            colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][2] = (byte) (tempBlue / numberOfChildren);
+            height[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = (short) (tempHeight / numberOfChildren);
+            depth[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = (short) (tempDepth / numberOfChildren);
             generationType[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = minGenerationType;
             nodeExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = true;
         }
@@ -232,7 +218,7 @@ public class LodRegion implements Serializable {
         }
         for (int x = 0; x <= 1; x++) {
             for (int z = 0; z <= 1; z++) {
-                children[x][z] = (generationType[levelPos.detailLevel - 1][2 * levelPos.posX + x][2 * levelPos.posZ + z] != 0);
+                children[x][z] = (nodeExistence[levelPos.detailLevel - 1][2 * levelPos.posX + x][2 * levelPos.posZ + z]);
             }
         }
         return children;

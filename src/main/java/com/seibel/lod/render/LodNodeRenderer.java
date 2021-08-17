@@ -803,7 +803,7 @@ public class LodNodeRenderer
 			{
 				if (lodDim.hasThisPositionBeenGenerated(new LevelPos((byte) 4,x,z)))
 				{
-					LodDataPoint lod = lodDim.getLodFromCoordinates( new LevelPos((byte) 4, x,z));
+					LodDataPoint lod = lodDim.getData( new LevelPos((byte) 4, x,z));
 					short lodHighestPoint = lod.height;
 					
 					if (playerPos.getY() < lodHighestPoint)

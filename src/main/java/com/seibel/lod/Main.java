@@ -10,11 +10,14 @@ import java.awt.*;
 public class Main {
     public static void main(String[] args){
         System.out.println(Math.floorMod(-11,4));
-        LodRegion lodRegion = new LodRegion((byte) 0,new RegionPos(0,0));
-        lodRegion.setData(new LevelPos((byte) 2,0,0), new LodDataPoint((short) 2,(short) 30, new Color(100,100,100)), (byte) 2,true);
+        LodRegion lodRegion = new LodRegion((byte) 0,new RegionPos(-1,-1));
+        lodRegion.setData(new LevelPos((byte) 2,-1,-1), new LodDataPoint((short) 50,(short) 10, new Color(1,1,1)), (byte) 2,true);
+        lodRegion.setData(new LevelPos((byte) 2,-1,-2), new LodDataPoint((short) 50,(short) 10, new Color(1,1,1)), (byte) 2,true);
+        lodRegion.setData(new LevelPos((byte) 2,-2,-1), new LodDataPoint((short) 50,(short) 10, new Color(1,1,1)), (byte) 2,true);
+        lodRegion.setData(new LevelPos((byte) 2,-2,-2), new LodDataPoint((short) 50,(short) 10, new Color(1,1,1)), (byte) 2,true);
         try {
             System.out.print("test ");
-            System.out.println(lodRegion.getData(new LevelPos((byte) 6,0,0)));
+            System.out.println(lodRegion.getData(new LevelPos((byte) 3,-1,-1)));
         }catch (Exception e){
             e.printStackTrace();
         }
