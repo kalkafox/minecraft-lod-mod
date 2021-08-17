@@ -8,6 +8,7 @@ import java.awt.*;
 
 public class Main {
     public static void main(String[] args){
+        System.out.println(Math.floorMod(-11,4));
         LodRegion lodRegion = new LodRegion((byte) 0,new RegionPos(0,0));
         lodRegion.setData((byte) 2,0,0, new LodDataPoint((short) 2,(short) 30, new Color(100,100,100)), (byte) 2,true);
         try {

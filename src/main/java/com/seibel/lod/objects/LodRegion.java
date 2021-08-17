@@ -7,14 +7,15 @@ import net.minecraft.world.chunk.Chunk;
 import java.awt.*;
 import java.io.Serializable;
 
-/**STANDARD TO FOLLOW
+/**
+ * STANDARD TO FOLLOW
  * every coordinate called posX or posZ is a relative coordinate and not and absolute coordinate
  * if an array contain coordinate the order is the following
  * 0 for x, 1 for z in 2D
  * 0 for x, 1 for y, 2 for z in 3D
  */
 
-public class LodRegion implements Serializable{
+public class LodRegion implements Serializable {
     //x coord,
     private byte minLevelOfDetail;
     private static final byte POSSIBLE_LOD = 10;
@@ -37,21 +38,21 @@ public class LodRegion implements Serializable{
     public final int regionPosX;
     public final int regionPosZ;
 
-    public LodRegion(byte minimumLevelOfDetail, RegionPos regionPos){
+    public LodRegion(byte minimumLevelOfDetail, RegionPos regionPos) {
         this.regionPosX = regionPos.x;
         this.regionPosZ = regionPos.z;
 
         //Array of matrices of arrays
-        colors =            new byte[POSSIBLE_LOD][][][];
+        colors = new byte[POSSIBLE_LOD][][][];
 
         //Arrays of matrices
-        height =            new short[POSSIBLE_LOD][][];
-        depth =             new short[POSSIBLE_LOD][][];
-        generationType =    new byte[POSSIBLE_LOD][][];
+        height = new short[POSSIBLE_LOD][][];
+        depth = new short[POSSIBLE_LOD][][];
+        generationType = new byte[POSSIBLE_LOD][][];
 
 
         //Initialize all the different matrices
-        for(byte lod = minimumLevelOfDetail; lod <= LodUtil.REGION_DETAIL_LEVEL; lod ++){
+        for (byte lod = minimumLevelOfDetail; lod <= LodUtil.REGION_DETAIL_LEVEL; lod++) {
             int size = (short) Math.pow(2, LodUtil.REGION_DETAIL_LEVEL - lod);
             colors[lod] = new byte[size][size][3];
             height[lod] = new short[size][size];
@@ -63,6 +64,7 @@ public class LodRegion implements Serializable{
 
     /**
      * This method can be used to insert data into the LodRegion
+     *
      * @param lod
      * @param posX
      * @param posZ
@@ -71,12 +73,13 @@ public class LodRegion implements Serializable{
      * @param update
      * @return
      */
-    public boolean setData(byte lod, int posX, int posZ, LodDataPoint dataPoint, byte generationType, boolean update){
+    public boolean setData(byte lod, int posX, int posZ, LodDataPoint dataPoint, byte generationType, boolean update) {
         return setData(lod, posX, posZ, (byte) (dataPoint.color.getRed() - 128), (byte) (dataPoint.color.getGreen() - 128), (byte) (dataPoint.color.getBlue() - 128), dataPoint.height, dataPoint.depth, generationType, update);
     }
 
     /**
      * This method can be used to insert data into the LodRegion
+     *
      * @param lod
      * @param posX
      * @param posZ
@@ -89,13 +92,13 @@ public class LodRegion implements Serializable{
      * @param update
      * @return
      */
-    public boolean setData(byte lod, int posX, int posZ, byte red, byte green, byte blue, short height, short depth, byte generationType, boolean update){
-        posX = Math.floorMod(posX, (int) Math.pow(2,lod));
-        posZ = Math.floorMod(posZ, (int) Math.pow(2,lod));
-        if( (this.generationType[lod][posX][posZ] == 0) || (generationType < this.generationType[lod][posX][posZ]) ) {
+    public boolean setData(byte lod, int posX, int posZ, byte red, byte green, byte blue, short height, short depth, byte generationType, boolean update) {
+        posX = Math.floorMod(posX, (int) Math.pow(2, lod));
+        posZ = Math.floorMod(posZ, (int) Math.pow(2, lod));
+        if ((this.generationType[lod][posX][posZ] == 0) || (generationType < this.generationType[lod][posX][posZ])) {
 
             //update the number of node present
-            if (this.generationType[lod][posX][posZ] == 0) numberOfPoints++ ;
+            if (this.generationType[lod][posX][posZ] == 0) numberOfPoints++;
 
             //add the node data
             this.colors[lod][posX][posZ][0] = red;
@@ -110,7 +113,7 @@ public class LodRegion implements Serializable{
             int tempPosZ = posZ;
 
             //update could be stopped and a single big update could be done at the end
-            if(update) {
+            if (update) {
                 for (byte tempLod = (byte) (lod + 1); tempLod <= LodUtil.REGION_DETAIL_LEVEL; tempLod++) {
                     tempPosX = Math.floorDiv(tempPosX, 2);
                     tempPosZ = Math.floorDiv(tempPosZ, 2);
@@ -118,23 +121,26 @@ public class LodRegion implements Serializable{
                 }
             }
             return true; //added
-        }else{
+        } else {
             return false; //not added
         }
     }
 
-    public LodDataPoint getData(ChunkPos chunkPos){
+    public LodDataPoint getData(ChunkPos chunkPos) {
         return getData(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z);
     }
 
     /**
      * This method will return the data in the position relative to the level of detail
+     *
      * @param lod
      * @param posX
      * @param posZ
      * @return the data at the relative pos and level
      */
-    public LodDataPoint getData(byte lod, int posX, int posZ){
+    public LodDataPoint getData(byte lod, int posX, int posZ) {
+        posX = Math.floorMod(posX, (int) Math.pow(2, lod));
+        posZ = Math.floorMod(posZ, (int) Math.pow(2, lod));
         return new LodDataPoint(
                 height[lod][posX][posZ],
                 depth[lod][posX][posZ],
@@ -144,25 +150,26 @@ public class LodRegion implements Serializable{
                 )
         );
     }
-/*
-    private void updateArea(byte lod, int posX, int posZ){
-    }
-*/
-    private void update(byte lod, int posX, int posZ){
-        posX = Math.floorMod(posX, (int) Math.pow(2,lod));
-        posZ = Math.floorMod(posZ, (int) Math.pow(2,lod));
+
+    /*
+        private void updateArea(byte lod, int posX, int posZ){
+        }
+    */
+    private void update(byte lod, int posX, int posZ) {
+        posX = Math.floorMod(posX, (int) Math.pow(2, lod));
+        posZ = Math.floorMod(posZ, (int) Math.pow(2, lod));
         boolean[][] children = getChildren(lod, posX, posZ);
         int numberOfChild = 0;
 
-        for(int x = 0; x <= 1; x++) {
+        for (int x = 0; x <= 1; x++) {
             for (int z = 0; z <= 1; z++) {
-                if(children[x][z]){
+                if (children[x][z]) {
                     numberOfChild++;
                 }
             }
         }
 
-        if(numberOfChild>0) {
+        if (numberOfChild > 0) {
 
             //int minDepth = Integer.MAX_VALUE;
             //int maxDepth = Integer.MIN_VALUE;
@@ -194,34 +201,36 @@ public class LodRegion implements Serializable{
                     }
                 }
             }
-            if(minGenerationType==0) minGenerationType = 1;
+            if (minGenerationType == 0) minGenerationType = 1;
             //height[lod][posX][posZ] = minHeight;
             //depth[lod][posX][posZ] = maxDepth;
             generationType[lod][posX][posZ] = minGenerationType;
         }
     }
 
-    private boolean[][] getChildren(byte lod, int posX, int posZ){
-        posX = Math.floorMod(posX, (int) Math.pow(2,lod));
-        posZ = Math.floorMod(posZ, (int) Math.pow(2,lod));
+    private boolean[][] getChildren(byte lod, int posX, int posZ) {
+        posX = Math.floorMod(posX, (int) Math.pow(2, lod));
+        posZ = Math.floorMod(posZ, (int) Math.pow(2, lod));
         boolean[][] children = new boolean[2][2];
-        int numberOfChild=0;
-        if(minLevelOfDetail == lod){
+        int numberOfChild = 0;
+        if (minLevelOfDetail == lod) {
             return children;
         }
-        for(int x = 0; x <= 1; x++) {
+        for (int x = 0; x <= 1; x++) {
             for (int z = 0; z <= 1; z++) {
-                children[x][z] = (generationType[lod-1][2*posX+x][2*posZ+z] != 0);
+                children[x][z] = (generationType[lod - 1][2 * posX + x][2 * posZ + z] != 0);
             }
         }
         return children;
     }
 
-    public boolean doesNodeExist(ChunkPos chunkPos){
+    public boolean doesNodeExist(ChunkPos chunkPos) {
         return doesNodeExist(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z);
     }
 
-    public boolean doesNodeExist(byte lod, int posX, int posZ){
+    public boolean doesNodeExist(byte lod, int posX, int posZ) {
+        posX = Math.floorMod(posX, (int) Math.pow(2, lod));
+        posZ = Math.floorMod(posZ, (int) Math.pow(2, lod));
         return (generationType[lod][posX][posZ] != 0);
     }
 
@@ -231,15 +240,15 @@ public class LodRegion implements Serializable{
      * @param lod
      * @return
      */
-    public LevelContainer getLevel(byte lod){
+    public LevelContainer getLevel(byte lod) {
         return new LevelContainer(colors[lod], height[lod], depth[lod], generationType[lod]);
     }
 
-    public void addLevel(byte lod, LevelContainer levelContainer){
-        if(lod < minLevelOfDetail-1){
+    public void addLevel(byte lod, LevelContainer levelContainer) {
+        if (lod < minLevelOfDetail - 1) {
             throw new IllegalArgumentException("addLevel requires a level that is at least the minimum level of the region -1 ");
         }
-        if(lod == minLevelOfDetail-1) minLevelOfDetail = lod;
+        if (lod == minLevelOfDetail - 1) minLevelOfDetail = lod;
         colors[lod] = levelContainer.colors;
         height[lod] = levelContainer.height;
         depth[lod] = levelContainer.depth;
@@ -247,12 +256,12 @@ public class LodRegion implements Serializable{
 
     }
 
-    public void removeDetailLevel(byte lod){
-        for(byte tempLod=0; tempLod <= lod; tempLod++){
-            colors[tempLod] =            new byte[0][0][0];
-            height[tempLod] =            new short[0][0];
-            depth[tempLod] =             new short[0][0];
-            generationType[tempLod] =    new byte[0][0];
+    public void removeDetailLevel(byte lod) {
+        for (byte tempLod = 0; tempLod <= lod; tempLod++) {
+            colors[tempLod] = new byte[0][0][0];
+            height[tempLod] = new short[0][0];
+            depth[tempLod] = new short[0][0];
+            generationType[tempLod] = new byte[0][0];
         }
     }
 }
