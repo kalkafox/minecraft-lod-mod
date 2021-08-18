@@ -308,7 +308,7 @@ public class LodDimension
 	{
 		// don't continue if the region can't be saved
 		RegionPos regionPos = levelPos.getRegionPos();
-
+		System.out.println(regionPos);
 		if (!regionIsInRange(regionPos.x, regionPos.z))
 		{
 			return false;
@@ -323,7 +323,6 @@ public class LodDimension
 			addOrOverwriteRegion(region);
 		}
 		boolean nodeAdded = region.setData(levelPos,lodDataPoint,(byte) generationMode.complexity,true);
-
 		// only save valid LODs to disk
 		if (!dontSave && fileHandler != null)
 		{
@@ -409,6 +408,36 @@ public class LodDimension
 		}
 
 		return region.hasDataBeenGenerated(levelPos);
+	}
+
+	/**
+	 * return true if and only if the node at that position exist
+	 */
+	public boolean doesDataExist(LevelPos levelPos)
+	{
+		LodRegion region = getRegion(levelPos.getRegionPos());
+
+		if(region == null)
+		{
+			return false;
+		}
+
+		return region.doesDataExist(levelPos);
+	}
+
+	/**
+	 * return true if and only if the node at that position exist
+	 */
+	public DistanceGenerationMode getGenerationMode(LevelPos levelPos)
+	{
+		LodRegion region = getRegion(levelPos.getRegionPos());
+
+		if(region == null)
+		{
+			return DistanceGenerationMode.NONE;
+		}
+
+		return region.getGenerationMode(levelPos);
 	}
 
 	/**

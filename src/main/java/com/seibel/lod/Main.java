@@ -1,26 +1,51 @@
 package com.seibel.lod;
 
-import com.seibel.lod.objects.LevelPos;
-import com.seibel.lod.objects.LodDataPoint;
-import com.seibel.lod.objects.LodRegion;
-import com.seibel.lod.objects.RegionPos;
+import com.seibel.lod.enums.DistanceGenerationMode;
+import com.seibel.lod.objects.*;
 
 import java.awt.*;
 
 public class Main {
     public static void main(String[] args){
-        System.out.println(Math.floorMod(-11,4));
-        LodRegion lodRegion = new LodRegion((byte) 0,new RegionPos(-1,-1));
-        lodRegion.setData(new LevelPos((byte) 2,-1,-1), new LodDataPoint((short) 50,(short) 10, new Color(1,1,1)), (byte) 2,true);
-        lodRegion.setData(new LevelPos((byte) 2,-1,-2), new LodDataPoint((short) 50,(short) 10, new Color(1,1,1)), (byte) 2,true);
-        lodRegion.setData(new LevelPos((byte) 2,-2,-1), new LodDataPoint((short) 50,(short) 10, new Color(1,1,1)), (byte) 2,true);
-        lodRegion.setData(new LevelPos((byte) 2,-2,-2), new LodDataPoint((short) 50,(short) 10, new Color(1,1,1)), (byte) 2,true);
         try {
-            System.out.print("test ");
-            System.out.println(lodRegion.getData(new LevelPos((byte) 3,-1,-1)));
-        }catch (Exception e){
+            System.out.println(Math.floorMod(-11, 4));
+            LevelPos pos = new LevelPos((byte) 0, -1000, -1000);
+            LodDimension lodDim = new LodDimension(null,null,10);
+            lodDim.move(new RegionPos(0,0));
+            /*
+            for (int g = 0; g <= 9; g++) {
+                System.out.print("test ");
+                System.out.println(lodDim.getData(pos.convert((byte) g)));
+                System.out.println(lodDim.hasThisPositionBeenGenerated(pos.convert((byte) g)));
+                System.out.println(lodDim.doesDataExist(pos.convert((byte) g)));
+                System.out.println(lodDim.getGenerationMode(pos.convert((byte) g)));
+            }
+            */
+            lodDim.addData(pos, new LodDataPoint((short) 50, (short) 10, new Color(1, 1, 1)), DistanceGenerationMode.FEATURES, true, true);
+             /*
+            for (int g = 0; g <= 9; g++) {
+                System.out.print("test ");
+                System.out.println(lodDim.getData(pos.convert((byte) g)));
+                System.out.println(lodDim.hasThisPositionBeenGenerated(pos.convert((byte) g)));
+                System.out.println(lodDim.doesDataExist(pos.convert((byte) g)));
+                System.out.println(lodDim.getGenerationMode(pos.convert((byte) g)));
+            }
+
+              */
+            lodDim.addData(pos, new LodDataPoint((short) 50, (short) 10, new Color(1, 1, 1)), DistanceGenerationMode.SERVER, true, true);
+            /*
+            for (int g = 0; g <= 9; g++) {
+                System.out.print("test ");
+                System.out.println(lodDim.getData(pos.convert((byte) g)));
+                System.out.println(lodDim.hasThisPositionBeenGenerated(pos.convert((byte) g)));
+                System.out.println(lodDim.doesDataExist(pos.convert((byte) g)));
+                System.out.println(lodDim.getGenerationMode(pos.convert((byte) g)));
+            }
+
+             */
+        }catch(Exception e){
             e.printStackTrace();
         }
-        return;
+
     }
 }

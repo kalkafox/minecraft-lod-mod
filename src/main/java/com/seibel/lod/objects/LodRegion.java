@@ -1,5 +1,6 @@
 package com.seibel.lod.objects;
 
+import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.util.LodUtil;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -77,15 +78,15 @@ public class LodRegion implements Serializable {
      */
     public boolean setData(LevelPos levelPos, LodDataPoint dataPoint, byte generationType, boolean update) {
         levelPos = levelPos.regionModule();
-        if ((this.generationType[levelPos.detailLevel][levelPos.posX][levelPos.posZ] == 0) || (generationType <= this.generationType[lod][posX][posZ])) {
+        if ((this.generationType[levelPos.detailLevel][levelPos.posX][levelPos.posZ] == 0) || (generationType >= this.generationType[levelPos.detailLevel][levelPos.posX][levelPos.posZ])) {
 
             //update the number of node present
             //if (this.generationType[lod][posX][posZ] == 0) numberOfPoints++;
 
             //add the node data
             this.colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][0] = (byte) (dataPoint.color.getRed() - 128);
-            this.colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][1] = (byte) (dataPoint.color.getRed() - 128);
-            this.colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][2] = (byte) (dataPoint.color.getRed() - 128);
+            this.colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][1] = (byte) (dataPoint.color.getGreen() - 128);
+            this.colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][2] = (byte) (dataPoint.color.getBlue() - 128);
             this.height[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = dataPoint.height;
             this.depth[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = dataPoint.depth;
             this.generationType[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = generationType;
@@ -96,7 +97,7 @@ public class LodRegion implements Serializable {
             if (update) {
                 for (byte tempLod = (byte) (levelPos.detailLevel + 1); tempLod <= LodUtil.REGION_DETAIL_LEVEL; tempLod++) {
                     tempLevelPos = tempLevelPos.convert(tempLod);
-                    update(levelPos);
+                    update(tempLevelPos);
                 }
             }
             return true;
@@ -145,6 +146,7 @@ public class LodRegion implements Serializable {
      * @param levelPos
      */
     private void update(LevelPos levelPos) {
+
         levelPos = levelPos.regionModule();
         boolean[][] children = getChildren(levelPos);
         int numberOfChildren = 0;
@@ -159,13 +161,15 @@ public class LodRegion implements Serializable {
         int newPosX;
         int newPosZ;
         byte newLod;
+        LevelPos childPos;
         for (int x = 0; x <= 1; x++) {
             for (int z = 0; z <= 1; z++) {
-                if (children[x][z]) {
+                newPosX = 2 * levelPos.posX + x;
+                newPosZ = 2 * levelPos.posZ + z;
+                newLod = (byte) (levelPos.detailLevel - 1);
+                childPos = new LevelPos(newLod, newPosX, newPosZ);
+                if (hasDataBeenGenerated(childPos)) {
                     numberOfChildren++;
-                    newPosX = 2 * levelPos.posX + x;
-                    newPosZ = 2 * levelPos.posZ + z;
-                    newLod = (byte) (levelPos.detailLevel - 1);
 
                     tempRed += colors[newLod][newPosX][newPosZ][0];
                     tempGreen += colors[newLod][newPosX][newPosZ][1];
@@ -210,6 +214,36 @@ public class LodRegion implements Serializable {
     public boolean doesDataExist(LevelPos levelPos) {
         levelPos = levelPos.regionModule();
         return dataExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ];
+    }
+
+    public DistanceGenerationMode getGenerationMode(LevelPos levelPos) {
+        levelPos = levelPos.regionModule();
+        DistanceGenerationMode generationMode = DistanceGenerationMode.NONE;
+        switch(generationType[levelPos.detailLevel][levelPos.posX][levelPos.posZ]){
+            case 0:
+                generationMode = DistanceGenerationMode.NONE;
+                break;
+            case 1:
+                generationMode = DistanceGenerationMode.BIOME_ONLY;
+                break;
+            case 2:
+                generationMode = DistanceGenerationMode.BIOME_ONLY_SIMULATE_HEIGHT;
+                break;
+            case 3:
+                generationMode = DistanceGenerationMode.SURFACE;
+                break;
+            case 4:
+                generationMode = DistanceGenerationMode.FEATURES;
+                break;
+            case 5:
+                generationMode = DistanceGenerationMode.SERVER;
+                break;
+            default:
+                generationMode = DistanceGenerationMode.NONE;
+                break;
+
+        }
+        return generationMode;
     }
 
     public boolean hasDataBeenGenerated(LevelPos levelPos) {

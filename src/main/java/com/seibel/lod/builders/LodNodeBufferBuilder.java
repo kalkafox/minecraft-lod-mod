@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.objects.LevelPos;
 import com.seibel.lod.objects.LodDataPoint;
 import com.seibel.lod.objects.LodDimension;
@@ -299,27 +300,32 @@ public class LodNodeBufferBuilder
 
 						// determine detail level should this LOD be drawn at
 						int distance = (int) Math.sqrt(Math.pow((playerBlockPosRounded.getX() - chunkX*16 + 8), 2) + Math.pow((playerBlockPosRounded.getZ() - chunkZ*16 + 8), 2));
-						int startX;
-						int startZ;
+						int posX;
+						int posZ;
 						LevelPos levelPos;
 
 						LodDetail detail = LodDetail.getDetailForDistance(LodConfig.CLIENT.maxDrawDetail.get(), distance, maxBlockDistance);
-						//LodDetail detail = LodDetail.FULL;
 						for (int k = 0; k < detail.dataPointLengthCount * detail.dataPointLengthCount; k++)
 						{
 							// how much to offset this LOD by
-							startX = detail.startX[k];
-							startZ = detail.startZ[k];
-
-							levelPos = new LevelPos((byte) 0, (int) (xOffset + startX),  (int) (xOffset + startZ)).convert((byte) detail.detailLevel);
-
+							posX = (int) (xOffset + detail.startX[k]);
+							posZ = (int) (zOffset + detail.startZ[k]);
+							levelPos = new LevelPos((byte) 0, posX, posZ).convert((byte) detail.detailLevel);
+							/*
+							if(lodDim.getGenerationMode(levelPos) != DistanceGenerationMode.NONE) {
+								System.out.println("CHECKING");
+								System.out.println(levelPos);
+								System.out.println(lodDim.doesDataExist(levelPos));
+								System.out.println(lodDim.getGenerationMode(levelPos));
+							}
+							 */
 							if (lodDim.hasThisPositionBeenGenerated(levelPos)){
 								LodDataPoint newLod = lodDim.getData(levelPos);
 								// get the desired LodTemplate and
 								// add this LOD to the buffer
 								LodConfig.CLIENT.lodTemplate.get().
 										template.addLodToBuffer(currentBuffer, lodDim, newLod,
-										xOffset + startX, yOffset, zOffset + startZ, renderer.debugging, detail);
+										posX, yOffset, posZ, renderer.debugging, detail);
 							}
 						}
 

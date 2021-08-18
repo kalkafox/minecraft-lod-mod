@@ -74,7 +74,7 @@ public enum DistanceGenerationMode
 	/** The higher the number the more complete the generation is. */
 	public final int complexity;
 	
-	DistanceGenerationMode(int complexity)
+	private DistanceGenerationMode(int complexity)
 	{
 		this.complexity = complexity;
 	}

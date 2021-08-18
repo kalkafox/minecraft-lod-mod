@@ -169,16 +169,15 @@ public class LodNodeBuilder
 						startZ, endX, endZ);
 				depth = 0;
 			}
-			LevelPos levelPos = new LevelPos(
-					(byte)0 ,
-					chunk.getPos().getMinBlockX() + startX,
-					chunk.getPos().getMinBlockZ() + startZ).convert((byte) detail.detailLevel);
-			lodDim.addData(levelPos.clone(),
-					new LodDataPoint(height, depth, color),
+			LevelPos levelPos = new LevelPos((byte)0 ,
+					chunk.getPos().x*16 + startX,
+					chunk.getPos().z*16 + startZ);
+			LodDataPoint data = new LodDataPoint(height, depth, color);
+			lodDim.addData(levelPos.convert((byte) detail.detailLevel),
+					data,
 					config.distanceGenerationMode,
 					true,
 					false);
-			
 		}
 	}
 	
