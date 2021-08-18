@@ -155,7 +155,7 @@ public class ClientProxy
 		LodConfig.CLIENT.maxDrawDetail.set(LodDetail.FULL);
 		LodConfig.CLIENT.maxGenerationDetail.set(LodDetail.FULL);
 		
-		LodConfig.CLIENT.lodChunkRadiusMultiplier.set(12);
+		LodConfig.CLIENT.lodChunkRadiusMultiplier.set(4);
 		LodConfig.CLIENT.fogDistance.set(FogDistance.FAR);
 		LodConfig.CLIENT.fogDrawOverride.set(FogDrawOverride.NEVER_DRAW_FOG);
 		LodConfig.CLIENT.shadingMode.set(ShadingMode.DARKEN_SIDES);

@@ -21,19 +21,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.objects.LevelPos;
 import com.seibel.lod.objects.LodDataPoint;
 import com.seibel.lod.objects.LodDimension;
 import org.lwjgl.opengl.GL11;
 
 import com.seibel.lod.builders.worldGeneration.LodNodeGenWorker;
+import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.enums.LodDetail;
 import com.seibel.lod.handlers.LodConfig;
 import com.seibel.lod.objects.NearFarVbos;
 import com.seibel.lod.proxy.ClientProxy;
 import com.seibel.lod.render.LodNodeRenderer;
-import com.seibel.lod.util.LodThreadFactory;
 import com.seibel.lod.util.LodUtil;
 
 import net.minecraft.client.Minecraft;
@@ -55,7 +54,7 @@ public class LodNodeBufferBuilder
 	private Minecraft mc;
 
 	/** This holds the thread used to generate new LODs off the main thread. */
-	private ExecutorService genThread = Executors.newSingleThreadExecutor(new LodThreadFactory(this.getClass().getSimpleName()));
+	private ExecutorService genThread = Executors.newSingleThreadExecutor();
 
 	private LodNodeBuilder LodQuadTreeNodeBuilder;
 
@@ -151,6 +150,7 @@ public class LodNodeBufferBuilder
 		{
 			try
 			{
+				System.out.println("test Workingg !=!=!=!=!!=");
 
 				long startTime = System.currentTimeMillis();
 
@@ -174,12 +174,14 @@ public class LodNodeBufferBuilder
 				// generation
 				int minChunkDist = Integer.MAX_VALUE;
 
+				System.out.println("REACH THIS POINT2");
 				// x axis
 				for (int i = 0; i < numbChunksWide; i++)
 				{
 					// z axis
 					for (int j = 0; j < numbChunksWide; j++)
 					{
+						System.out.println("REACH THIS POINT3");
 						int chunkX = i + startChunkPos.x;
 						int chunkZ = j + startChunkPos.z;
 
@@ -196,11 +198,13 @@ public class LodNodeBufferBuilder
 						double yOffset = 0;
 						double zOffset = (LodUtil.CHUNK_WIDTH * j) + startBlockPos.getZ();
 
-						if (lodDim.hasThisPositionBeenGenerated(new ChunkPos(chunkX, chunkZ)))
+						LevelPos chunkPos = new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, chunkX, chunkZ);
+						System.out.println("REACH THIS POINT4");
+						if (!lodDim.doesDataExist(chunkPos) || (lodDim.getGenerationMode(chunkPos) == DistanceGenerationMode.NONE))
 						{
 							// generate a new chunk if no chunk currently exists
 							// and we aren't waiting on any other chunks to generate
-							if (numberOfChunksWaitingToGenerate.get() < maxChunkGenRequests)
+							if (!lodDim.doesDataExist(chunkPos) == DistanceGenerationMode.NONE && numberOfChunksWaitingToGenerate.get() < maxChunkGenRequests)
 							{
 								ChunkPos pos = new ChunkPos(chunkX, chunkZ);
 
@@ -290,7 +294,7 @@ public class LodNodeBufferBuilder
 							continue;
 
 						} // lod null or empty
-
+						System.out.println("REACH THIS POINT");
 						// should we draw near or far fog?
 						BufferBuilder currentBuffer = null;
 						if (isCoordinateInNearFogArea(i, j, numbChunksWide / 2))
@@ -300,41 +304,33 @@ public class LodNodeBufferBuilder
 
 						// determine detail level should this LOD be drawn at
 						int distance = (int) Math.sqrt(Math.pow((playerBlockPosRounded.getX() - chunkX*16 + 8), 2) + Math.pow((playerBlockPosRounded.getZ() - chunkZ*16 + 8), 2));
+						LodDetail detail = LodDetail.getDetailForDistance(LodConfig.CLIENT.maxDrawDetail.get(), distance, maxBlockDistance);
+
+
 						int posX;
 						int posZ;
+						int renderPosX;
+						int renderPosZ;
 						LevelPos levelPos;
-						LodDataPoint lodData;
-						LodDetail detail = LodDetail.getDetailForDistance(LodConfig.CLIENT.maxDrawDetail.get(), distance, maxBlockDistance);
-						for (int k = 0; k < detail.dataPointLengthCount * detail.dataPointLengthCount; k++)
-						{
-							// how much to offset this LOD by
-							posX = (int) (xOffset + detail.startX[k]);
-							posZ = (int) (zOffset + detail.startZ[k]);
-							/*
-							if(lodDim.getGenerationMode(levelPos) != DistanceGenerationMode.NONE) {
-								System.out.println("CHECKING");
-								System.out.println(levelPos);
-								System.out.println(lodDim.doesDataExist(levelPos));
-								System.out.println(lodDim.getGenerationMode(levelPos));
-							}
-							 */
-							levelPos = new LevelPos((byte) 0, detail.startX[k], detail.startZ[k]).convert((byte) detail.detailLevel);
-							if (lodDim.hasThisPositionBeenGenerated(levelPos)) {
-								lodData = lodDim.getData(levelPos);
-							}else {
-								lodData = lodDim.getData(levelPos);
-							}
+						LodDataPoint data;
+						for(int k = 0; k < detail.detailLevel*detail.detailLevel; k++){
+							posX = chunkX*16 + detail.startX[k];
+							posZ = chunkZ*16  + detail.startZ[k];
+							posX = 0;
+							posZ = 0;
+							renderPosX = (int) (xOffset + detail.startX[k]);
+							renderPosZ = (int) (xOffset + detail.startZ[k]);
 							levelPos = new LevelPos((byte) 0, posX, posZ).convert((byte) detail.detailLevel);
+							data = lodDim.getData(levelPos);
+							System.out.println(data);
 							// get the desired LodTemplate and
 							// add this LOD to the buffer
-							LodConfig.CLIENT.lodTemplate.get().
-									template.addLodToBuffer(currentBuffer, lodDim, lodData,
-									posX, yOffset, posZ, renderer.debugging, detail);
+							LodConfig.CLIENT.lodTemplate.get().template.addLodToBuffer(currentBuffer, lodDim, data,
+									renderPosX, yOffset, renderPosZ, renderer.debugging, detail);
+
 						}
-
 					}
-				}
-
+				}/*
 				// issue #19
 				// TODO add a way for a server side mod to generate chunks requested here
 				if (mc.hasSingleplayerServer())
@@ -367,7 +363,7 @@ public class LodNodeBufferBuilder
 						WorldWorkerManager.addWorker(genWorker);
 					}
 				}
-
+*/
 				// finish the buffer building
 				buildableNearBuffer.end();
 				buildableFarBuffer.end();
@@ -380,7 +376,7 @@ public class LodNodeBufferBuilder
 				long buildTime = endTime - startTime;
 				if (buildTime > 1000)
 				{
-//					ClientProxy.LOGGER.info("\"LodNodeBufferBuilder.generateLodBuffersAsync\" took " + buildTime + " milliseconds, consider lowering the render quality.");
+					ClientProxy.LOGGER.info("\"LodNodeBufferBuilder.generateLodBuffersAsync\" took " + buildTime + " milliseconds, consider lowering the render quality.");
 				}
 
 				// mark that the buildable buffers as ready to swap
@@ -396,14 +392,6 @@ public class LodNodeBufferBuilder
 				// regardless of if we successfully created the buffers or not
 				// we are done generating.
 				generatingBuffers = false;
-
-
-				// clean up any potentially open resources
-				if (buildableNearBuffer != null && buildableNearBuffer.building())
-					buildableNearBuffer.end();
-
-				if (buildableFarBuffer != null && buildableFarBuffer.building())
-					buildableFarBuffer.end();
 			}
 
 		});
@@ -509,7 +497,7 @@ public class LodNodeBufferBuilder
 	/**
 	 * If this is true the buildable near and far
 	 * buffers have been generated and are ready to be
-	 * sent to the LodRenderer. 
+	 * sent to the LodRenderer.
 	 */
 	public boolean newBuffersAvaliable()
 	{
