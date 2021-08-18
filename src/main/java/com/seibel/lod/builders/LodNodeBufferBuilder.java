@@ -303,14 +303,13 @@ public class LodNodeBufferBuilder
 						int posX;
 						int posZ;
 						LevelPos levelPos;
-
+						LodDataPoint lodData;
 						LodDetail detail = LodDetail.getDetailForDistance(LodConfig.CLIENT.maxDrawDetail.get(), distance, maxBlockDistance);
 						for (int k = 0; k < detail.dataPointLengthCount * detail.dataPointLengthCount; k++)
 						{
 							// how much to offset this LOD by
 							posX = (int) (xOffset + detail.startX[k]);
 							posZ = (int) (zOffset + detail.startZ[k]);
-							levelPos = new LevelPos((byte) 0, posX, posZ).convert((byte) detail.detailLevel);
 							/*
 							if(lodDim.getGenerationMode(levelPos) != DistanceGenerationMode.NONE) {
 								System.out.println("CHECKING");
@@ -319,14 +318,18 @@ public class LodNodeBufferBuilder
 								System.out.println(lodDim.getGenerationMode(levelPos));
 							}
 							 */
-							if (lodDim.hasThisPositionBeenGenerated(levelPos)){
-								LodDataPoint newLod = lodDim.getData(levelPos);
-								// get the desired LodTemplate and
-								// add this LOD to the buffer
-								LodConfig.CLIENT.lodTemplate.get().
-										template.addLodToBuffer(currentBuffer, lodDim, newLod,
-										posX, yOffset, posZ, renderer.debugging, detail);
+							levelPos = new LevelPos((byte) 0, detail.startX[k], detail.startZ[k]).convert((byte) detail.detailLevel);
+							if (lodDim.hasThisPositionBeenGenerated(levelPos)) {
+								lodData = lodDim.getData(levelPos);
+							}else {
+								lodData = lodDim.getData(levelPos);
 							}
+							levelPos = new LevelPos((byte) 0, posX, posZ).convert((byte) detail.detailLevel);
+							// get the desired LodTemplate and
+							// add this LOD to the buffer
+							LodConfig.CLIENT.lodTemplate.get().
+									template.addLodToBuffer(currentBuffer, lodDim, lodData,
+									posX, yOffset, posZ, renderer.debugging, detail);
 						}
 
 					}

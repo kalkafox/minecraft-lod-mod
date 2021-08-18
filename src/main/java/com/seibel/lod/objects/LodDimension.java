@@ -304,11 +304,10 @@ public class LodDimension
 	 * stored in the LOD. If an LOD already exists at the given
 	 * coordinates it will be overwritten.
 	 */
-	public Boolean addData(LevelPos levelPos, LodDataPoint lodDataPoint, DistanceGenerationMode generationMode, boolean update, boolean dontSave)
+	public synchronized Boolean addData(LevelPos levelPos, LodDataPoint lodDataPoint, DistanceGenerationMode generationMode, boolean update, boolean dontSave)
 	{
 		// don't continue if the region can't be saved
 		RegionPos regionPos = levelPos.getRegionPos();
-		System.out.println(regionPos);
 		if (!regionIsInRange(regionPos.x, regionPos.z))
 		{
 			return false;
@@ -350,7 +349,7 @@ public class LodDimension
 	 * Returns null if the LodChunk doesn't exist or
 	 * is outside the loaded area.
 	 */
-	public LodDataPoint getData(ChunkPos chunkPos)
+	public synchronized LodDataPoint getData(ChunkPos chunkPos)
 	{
 		LevelPos levelPos = new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z);
 		return getData(levelPos);
@@ -363,7 +362,7 @@ public class LodDimension
 	 * Returns null if the LodChunk doesn't exist or
 	 * is outside the loaded area.
 	 */
-	public LodDataPoint getData(LevelPos levelPos)
+	public synchronized LodDataPoint getData(LevelPos levelPos)
 	{
 		if (levelPos.detailLevel > LodUtil.REGION_DETAIL_LEVEL)
 			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + levelPos.detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
@@ -382,7 +381,7 @@ public class LodDimension
 	/**
 	 * return true if and only if the node at that position exist
 	 */
-	public boolean hasThisPositionBeenGenerated(ChunkPos chunkPos)
+	public synchronized boolean hasThisPositionBeenGenerated(ChunkPos chunkPos)
 	{
 		LodRegion region = getRegion(LodUtil.convertGenericPosToRegionPos(chunkPos.x, chunkPos.z, LodUtil.CHUNK_DETAIL_LEVEL));
 
@@ -398,7 +397,7 @@ public class LodDimension
 	 * return true if and only if the node at that position exist
 	 */
 
-	public boolean hasThisPositionBeenGenerated(LevelPos levelPos)
+	public synchronized boolean hasThisPositionBeenGenerated(LevelPos levelPos)
 	{
 		LodRegion region = getRegion(levelPos.getRegionPos());
 
@@ -413,7 +412,7 @@ public class LodDimension
 	/**
 	 * return true if and only if the node at that position exist
 	 */
-	public boolean doesDataExist(LevelPos levelPos)
+	public synchronized boolean doesDataExist(LevelPos levelPos)
 	{
 		LodRegion region = getRegion(levelPos.getRegionPos());
 
@@ -428,7 +427,7 @@ public class LodDimension
 	/**
 	 * return true if and only if the node at that position exist
 	 */
-	public DistanceGenerationMode getGenerationMode(LevelPos levelPos)
+	public synchronized DistanceGenerationMode getGenerationMode(LevelPos levelPos)
 	{
 		LodRegion region = getRegion(levelPos.getRegionPos());
 
@@ -444,7 +443,7 @@ public class LodDimension
 	 * Get the region at the given X and Z coordinates from the
 	 * RegionFileHandler.
 	 */
-	public LodRegion getRegionFromFile(RegionPos regionPos)
+	public synchronized LodRegion getRegionFromFile(RegionPos regionPos)
 	{
 		if (fileHandler != null)
 			return fileHandler.loadRegionFromFile(regionPos);
