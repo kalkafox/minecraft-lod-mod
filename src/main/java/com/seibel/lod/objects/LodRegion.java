@@ -106,6 +106,7 @@ public class LodRegion implements Serializable {
         }
     }
 
+
     public LodDataPoint getData(ChunkPos chunkPos) {
         return getData(new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z));
     }
@@ -141,6 +142,32 @@ public class LodRegion implements Serializable {
     }
 
     /**TODO a method to update a whole area, to be used as a single big update*/
+    /**
+     *
+     * @param levelPos
+     */
+    private void updateArea(LevelPos levelPos) {
+        /*
+        LevelPos tempLevelPos = levelPos;
+        int sizeDiff;
+        int startX;
+        int startZ;
+        for(int bottom = minLevelOfDetail + 1 ; bottom < levelPos.detailLevel ; bottom ++){
+            tempLevelPos = levelPos.convert(bottom);
+            startX = tempLevelPos.posX;
+            startZ = tempLevelPos.posZ;
+            sizeDiff = (int) Math.pow(2, levelPos.detailLevel - bottom);
+            for(int x = 0; x < sizeDiff; x++){
+                for(int z = 0; z < sizeDiff; z++) {
+                    update(new LevelPos(bottom, startX+x, startZ+z));
+                }
+            }
+
+        }
+
+         */
+    }
+
     /**
      *
      * @param levelPos
@@ -257,7 +284,7 @@ public class LodRegion implements Serializable {
      * @return
      */
     public LevelContainer getLevel(byte lod) {
-        return new LevelContainer(colors[lod], height[lod], depth[lod], generationType[lod], dataExistence[lod]);
+        return new LevelContainer(lod, colors[lod], height[lod], depth[lod], generationType[lod], dataExistence[lod]);
     }
 
     public void addLevel(byte lod, LevelContainer levelContainer) {

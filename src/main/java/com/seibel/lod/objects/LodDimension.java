@@ -92,7 +92,7 @@ public class LodDimension
 					saveDir = new File(mc.gameDirectory.getCanonicalFile().getPath() +
 							File.separatorChar + "lod server data" + File.separatorChar + LodUtil.getDimensionIDFromWorld(mc.level));
 				}
-				
+
 				fileHandler = new LodDimensionFileHandler(saveDir, this);
 			}
 			catch (IOException e)

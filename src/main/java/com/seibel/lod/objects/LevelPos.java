@@ -14,10 +14,17 @@ public class LevelPos implements Cloneable{
     }
 
     public LevelPos convert( byte newDetailLevel){
-        return new LevelPos(
-                newDetailLevel,
-                Math.floorDiv(posX, (int) Math.pow(2, newDetailLevel - detailLevel)),
-                Math.floorDiv(posZ, (int) Math.pow(2, newDetailLevel - detailLevel)));
+        if(newDetailLevel >= detailLevel) {
+            return new LevelPos(
+                    newDetailLevel,
+                    Math.floorDiv(posX, (int) Math.pow(2, newDetailLevel - detailLevel)),
+                    Math.floorDiv(posZ, (int) Math.pow(2, newDetailLevel - detailLevel)));
+        }else{
+            return new LevelPos(
+                    newDetailLevel,
+                    posX * (int) Math.pow(2, detailLevel - newDetailLevel),
+                    posZ * (int) Math.pow(2, detailLevel - newDetailLevel));
+        }
     }
 
     public LevelPos regionModule(){
