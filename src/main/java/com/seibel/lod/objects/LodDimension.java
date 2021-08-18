@@ -358,7 +358,7 @@ public class LodDimension
 	}
 
 	/**
-	 * Get the LodNodeData at the given X and Z coordinates
+	 * Get the data point at the given X and Z coordinates
 	 * in this dimension.
 	 * <br>
 	 * Returns null if the LodChunk doesn't exist or
@@ -392,7 +392,7 @@ public class LodDimension
 			return false;
 		}
 
-		return region.doesDataExist(new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z));
+		return region.hasDataBeenGenerated(new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, chunkPos.x, chunkPos.z));
 	}
 
 	/**
@@ -408,7 +408,7 @@ public class LodDimension
 			return false;
 		}
 
-		return region.doesDataExist(levelPos);
+		return region.hasDataBeenGenerated(levelPos);
 	}
 
 	/**

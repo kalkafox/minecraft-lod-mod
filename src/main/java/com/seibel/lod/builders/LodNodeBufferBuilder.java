@@ -299,29 +299,22 @@ public class LodNodeBufferBuilder
 
 						// determine detail level should this LOD be drawn at
 						int distance = (int) Math.sqrt(Math.pow((playerBlockPosRounded.getX() - chunkX*16 + 8), 2) + Math.pow((playerBlockPosRounded.getZ() - chunkZ*16 + 8), 2));
-
+						int startX;
+						int startZ;
+						LevelPos levelPos;
 
 						LodDetail detail = LodDetail.getDetailForDistance(LodConfig.CLIENT.maxDrawDetail.get(), distance, maxBlockDistance);
 						//LodDetail detail = LodDetail.FULL;
 						for (int k = 0; k < detail.dataPointLengthCount * detail.dataPointLengthCount; k++)
 						{
 							// how much to offset this LOD by
-							int startX = detail.startX[k];
-							int startZ = detail.startZ[k];
-							LevelPos levelPos = new LevelPos((byte) 0, (int) (xOffset + startX),  (int) (zOffset + startZ));
-							levelPos.convert((byte) detail.detailLevel);
-							System.out.println(levelPos.toString() + " " + lodDim.getData(levelPos.clone()).toString());
-							if (lodDim.hasThisPositionBeenGenerated(levelPos.clone())){
-								System.out.println();
-								LodDataPoint newLod = lodDim.getData(levelPos.clone());
-								/*
-								for(int g = 0; g<=9; g++){
-									LodDataPoint newLod2 = lodDim.getLodFromCoordinates(
-											0,
-											0,
-											(byte) g);
-									System.out.println(g + " " + newLod2);
-								}*/
+							startX = detail.startX[k];
+							startZ = detail.startZ[k];
+
+							levelPos = new LevelPos((byte) 0, (int) (xOffset + startX),  (int) (xOffset + startZ)).convert((byte) detail.detailLevel);
+
+							if (lodDim.hasThisPositionBeenGenerated(levelPos)){
+								LodDataPoint newLod = lodDim.getData(levelPos);
 								// get the desired LodTemplate and
 								// add this LOD to the buffer
 								LodConfig.CLIENT.lodTemplate.get().

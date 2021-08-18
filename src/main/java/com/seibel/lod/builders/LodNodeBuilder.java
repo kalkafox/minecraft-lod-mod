@@ -172,8 +172,7 @@ public class LodNodeBuilder
 			LevelPos levelPos = new LevelPos(
 					(byte)0 ,
 					chunk.getPos().getMinBlockX() + startX,
-					chunk.getPos().getMinBlockZ() + startZ);
-			levelPos.convert((byte) detail.detailLevel);
+					chunk.getPos().getMinBlockZ() + startZ).convert((byte) detail.detailLevel);
 			lodDim.addData(levelPos.clone(),
 					new LodDataPoint(height, depth, color),
 					config.distanceGenerationMode,

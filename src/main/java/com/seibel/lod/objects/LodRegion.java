@@ -76,55 +76,32 @@ public class LodRegion implements Serializable {
      * @return
      */
     public boolean setData(LevelPos levelPos, LodDataPoint dataPoint, byte generationType, boolean update) {
-        levelPos.regionModule();
-        return setData(levelPos.detailLevel, levelPos.posX, levelPos.posZ, (byte) (dataPoint.color.getRed() - 128), (byte) (dataPoint.color.getGreen() - 128), (byte) (dataPoint.color.getBlue() - 128), dataPoint.height, dataPoint.depth, generationType, update);
-    }
-
-    /**
-     * This method can be used to insert data into the LodRegion
-     *
-     * @param lod
-     * @param posX
-     * @param posZ
-     * @param red
-     * @param green
-     * @param blue
-     * @param height
-     * @param depth
-     * @param generationType
-     * @param update
-     * @return
-     */
-    private boolean setData(byte lod, int posX, int posZ, byte red, byte green, byte blue, short height, short depth, byte generationType, boolean update) {
-        if ((this.generationType[lod][posX][posZ] == 0) || (generationType <= this.generationType[lod][posX][posZ])) {
+        levelPos = levelPos.regionModule();
+        if ((this.generationType[levelPos.detailLevel][levelPos.posX][levelPos.posZ] == 0) || (generationType <= this.generationType[lod][posX][posZ])) {
 
             //update the number of node present
             //if (this.generationType[lod][posX][posZ] == 0) numberOfPoints++;
 
             //add the node data
-            this.colors[lod][posX][posZ][0] = red;
-            this.colors[lod][posX][posZ][1] = green;
-            this.colors[lod][posX][posZ][2] = blue;
-            this.height[lod][posX][posZ] = height;
-            this.depth[lod][posX][posZ] = depth;
-            this.generationType[lod][posX][posZ] = generationType;
-            this.dataExistence[lod][posX][posZ] = true;
+            this.colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][0] = (byte) (dataPoint.color.getRed() - 128);
+            this.colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][1] = (byte) (dataPoint.color.getRed() - 128);
+            this.colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][2] = (byte) (dataPoint.color.getRed() - 128);
+            this.height[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = dataPoint.height;
+            this.depth[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = dataPoint.depth;
+            this.generationType[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = generationType;
+            this.dataExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = true;
 
-            //update could be stopped and a single big update could be done at the endnew
-            LevelPos levelPos = new LevelPos(lod, posX, posZ);
+            //update could be stopped and a single big update could be done at the end
+            LevelPos tempLevelPos = levelPos;
             if (update) {
-                for (byte tempLod = (byte) (lod + 1); tempLod <= LodUtil.REGION_DETAIL_LEVEL; tempLod++) {
-                    levelPos.convert(tempLod);
+                for (byte tempLod = (byte) (levelPos.detailLevel + 1); tempLod <= LodUtil.REGION_DETAIL_LEVEL; tempLod++) {
+                    tempLevelPos = tempLevelPos.convert(tempLod);
                     update(levelPos);
                 }
             }
-            //System.out.print("created ");
-            //System.out.println(new LevelPos(lod,posX,posZ));
-            return true; //added
+            return true;
         } else {
-            //System.out.print("not created ");
-            //System.out.println(new LevelPos(lod,posX,posZ));
-            return false; //not added
+            return false;
         }
     }
 
@@ -151,7 +128,7 @@ public class LodRegion implements Serializable {
      * @return the data at the relative pos and level
      */
     public LodDataPoint getData(LevelPos levelPos) {
-        levelPos.regionModule();
+        levelPos = levelPos.regionModule();
         return new LodDataPoint(
                 height[levelPos.detailLevel][levelPos.posX][levelPos.posZ],
                 depth[levelPos.detailLevel][levelPos.posX][levelPos.posZ],
@@ -162,13 +139,13 @@ public class LodRegion implements Serializable {
         );
     }
 
-    /*
-        private void updateArea(byte lod, int posX, int posZ){
-        }
-    */
+    /**TODO a method to update a whole area, to be used as a single big update*/
+    /**
+     *
+     * @param levelPos
+     */
     private void update(LevelPos levelPos) {
-
-        levelPos.regionModule();
+        levelPos = levelPos.regionModule();
         boolean[][] children = getChildren(levelPos);
         int numberOfChildren = 0;
 
@@ -179,13 +156,16 @@ public class LodRegion implements Serializable {
         int tempBlue = 0;
         int tempHeight = 0;
         int tempDepth = 0;
+        int newPosX;
+        int newPosZ;
+        byte newLod;
         for (int x = 0; x <= 1; x++) {
             for (int z = 0; z <= 1; z++) {
                 if (children[x][z]) {
                     numberOfChildren++;
-                    int newPosX = 2 * levelPos.posX + x;
-                    int newPosZ = 2 * levelPos.posZ + z;
-                    byte newLod = (byte) (levelPos.detailLevel - 1);
+                    newPosX = 2 * levelPos.posX + x;
+                    newPosZ = 2 * levelPos.posZ + z;
+                    newLod = (byte) (levelPos.detailLevel - 1);
 
                     tempRed += colors[newLod][newPosX][newPosZ][0];
                     tempGreen += colors[newLod][newPosX][newPosZ][1];
@@ -209,7 +189,7 @@ public class LodRegion implements Serializable {
     }
 
     private boolean[][] getChildren(LevelPos levelPos) {
-        levelPos.regionModule();
+        levelPos = levelPos.regionModule();
         boolean[][] children = new boolean[2][2];
         int numberOfChild = 0;
         if (minLevelOfDetail == levelPos.detailLevel) {
@@ -228,10 +208,14 @@ public class LodRegion implements Serializable {
     }
 
     public boolean doesDataExist(LevelPos levelPos) {
-        levelPos.regionModule();
+        levelPos = levelPos.regionModule();
         return dataExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ];
     }
 
+    public boolean hasDataBeenGenerated(LevelPos levelPos) {
+        levelPos = levelPos.regionModule();
+        return (generationType[levelPos.detailLevel][levelPos.posX][levelPos.posZ] != 0);
+    }
     /**
      * This will be used to save a level
      *
