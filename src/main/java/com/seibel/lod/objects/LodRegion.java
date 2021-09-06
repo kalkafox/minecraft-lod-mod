@@ -1,14 +1,8 @@
 package com.seibel.lod.objects;
 
-import java.io.Serializable;
-import java.util.concurrent.ConcurrentMap;
-
-import com.seibel.lod.objects.LevelPos.LevelPos;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import com.seibel.lod.builders.LodBuilder;
 import com.seibel.lod.enums.DistanceGenerationMode;
-import com.seibel.lod.proxy.ClientProxy;
 import com.seibel.lod.util.DetailDistanceUtil;
 import com.seibel.lod.util.LodUtil;
 
@@ -162,25 +156,25 @@ public class LodRegion
 	 *
 	 * @return
 	 */
-	public void getDataToGenerate(ConcurrentMap<LevelPos, MutableBoolean> dataToGenerate, int playerPosX, int playerPosZ)
+	public void getDataToGenerate(PosToGenerateContainer posToGenerate, int playerPosX, int playerPosZ)
 	{
-		LevelPos levelPos = new LevelPos(LodUtil.REGION_DETAIL_LEVEL, 0, 0);
-		getDataToGenerate(dataToGenerate, levelPos, playerPosX, playerPosZ);
+		int[] levelPos = LevelPosUtil.createLevelPos(LodUtil.REGION_DETAIL_LEVEL, 0, 0);
+		getDataToGenerate(posToGenerate, levelPos, playerPosX, playerPosZ);
 
 	}
 
-	private void getDataToGenerate(ConcurrentMap<LevelPos, MutableBoolean> dataToGenerate, LevelPos levelPos, int playerPosX, int playerPosZ)
+	private void getDataToGenerate(PosToGenerateContainer posToGenerate, int[] levelPos, int playerPosX, int playerPosZ)
 	{
-		int size = 1 << (LodUtil.REGION_DETAIL_LEVEL - levelPos.detailLevel);
+		byte detailLevel = LevelPosUtil.getDetailLevel(levelPos);
+		int posX = LevelPosUtil.getPosX(levelPos);
+		int posZ = LevelPosUtil.getPosZ(levelPos);
+		int size = 1 << (LodUtil.REGION_DETAIL_LEVEL - detailLevel);
 
 		//here i calculate the the LevelPos is in range
 		//This is important to avoid any kind of hole in the generation
-		int minDistance = levelPos.minDistance(playerPosX, playerPosZ, regionPosX, regionPosZ);
+		int minDistance = LevelPosUtil.minDistance(detailLevel, posX + regionPosX*size, posZ + regionPosZ*size, playerPosX, playerPosZ);
 
 
-		int posX = levelPos.posX;
-		int posZ = levelPos.posZ;
-		byte detailLevel = levelPos.detailLevel;
 		byte childDetailLevel = (byte) (detailLevel - 1);
 		int childPosX = posX * 2;
 		int childPosZ = posZ * 2;
@@ -195,14 +189,7 @@ public class LodRegion
 		{
 			if (!doesDataExist(levelPos))
 			{
-				levelPos.changeParameters(detailLevel, posX + regionPosX * size, posZ + regionPosZ * size);
-				if (dataToGenerate.containsKey(levelPos))
-				{
-					dataToGenerate.get(levelPos).setTrue();
-				} else
-				{
-					dataToGenerate.put(levelPos.clone(), new MutableBoolean(true));
-				}
+				posToGenerate.addPosToGenerate(detailLevel, posX + regionPosX * size, posZ + regionPosZ * size);
 			}
 		} else
 		{
@@ -215,19 +202,12 @@ public class LodRegion
 				{
 					for (int z = 0; z <= 1; z++)
 					{
-						levelPos.changeParameters((byte) (detailLevel - 1), childPosX + x, childPosZ + z);
+						levelPos = LevelPosUtil.createLevelPos((byte) (detailLevel - 1), childPosX + x, childPosZ + z);
 
 						if (!doesDataExist(levelPos))
 						{
 							num++;
-							levelPos.changeParameters((byte) (detailLevel - 1), childPosX + x + regionPosX * childSize, childPosZ + z + regionPosZ * childSize);
-							if (dataToGenerate.containsKey(levelPos))
-							{
-								dataToGenerate.get(levelPos).setTrue();
-							} else
-							{
-								dataToGenerate.put(levelPos.clone(), new MutableBoolean(true));
-							}
+							posToGenerate.addPosToGenerate((byte) (detailLevel - 1), childPosX + x + regionPosX * childSize, childPosZ + z + regionPosZ * childSize);
 						}
 					}
 				}
@@ -239,8 +219,10 @@ public class LodRegion
 					{
 						for (int z = 0; z <= 1; z++)
 						{
-							levelPos.changeParameters((byte) (detailLevel - 1), childPosX + x, childPosZ + z);
-							getDataToGenerate(dataToGenerate, levelPos, playerPosX, playerPosZ);
+							levelPos[0] = (byte) (detailLevel - 1);
+							levelPos[1]	= childPosX + x;
+							levelPos[2]	= childPosZ + z;
+							getDataToGenerate(posToGenerate, levelPos, playerPosX, playerPosZ);
 						}
 					}
 				}
@@ -249,21 +231,13 @@ public class LodRegion
 			{
 				if (DetailDistanceUtil.getLodGenDetail(childDetailLevel).detailLevel <= (childDetailLevel))
 				{
-					levelPos.changeParameters(detailLevel, posX, posZ);
-					levelPos.convert(childDetailLevel);
+					levelPos = LevelPosUtil.convert(LevelPosUtil.createLevelPos(detailLevel, posX, posZ),childDetailLevel);
 					if (!doesDataExist(levelPos))
 					{
-						levelPos.changeParameters(levelPos.detailLevel, levelPos.posX + regionPosX * childSize, levelPos.posZ + regionPosZ * childSize);
-						if (dataToGenerate.containsKey(levelPos))
-						{
-							dataToGenerate.get(levelPos).setTrue();
-						} else
-						{
-							dataToGenerate.put(levelPos.clone(), new MutableBoolean(true));
-						}
+						posToGenerate.addPosToGenerate(LevelPosUtil.getDetailLevel(levelPos), LevelPosUtil.getPosX(levelPos), LevelPosUtil.getPosZ(levelPos));
 					} else
 					{
-						getDataToGenerate(dataToGenerate, levelPos, playerPosX, playerPosZ);
+						getDataToGenerate(posToGenerate, levelPos, playerPosX, playerPosZ);
 					}
 				}
 			}
@@ -465,15 +439,19 @@ public class LodRegion
 	}
 
 	/**
-	 * @param levelPos
 	 * @return
 	 */
-	public boolean doesDataExist(LevelPos levelPos)
+	public boolean doesDataExist(byte detailLevel, int posX, int posZ)
 	{
 		try
 		{
-			levelPos = levelPos.getRegionModuleLevelPos();
-			return dataExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ];
+			if(posX >= LodUtil.REGION_WIDTH
+					   || posZ >= LodUtil.REGION_WIDTH
+					   || posX < 0
+					   || posZ < 0 )
+				return false;
+			else
+				return dataExistence[detailLevel][posX][posZ];
 		} catch (NullPointerException e)
 		{
 			return false;

@@ -21,9 +21,9 @@ import java.awt.Color;
 import java.io.File;
 import java.util.HashSet;
 
+import com.seibel.lod.objects.LevelPosUtil;
 import com.seibel.lod.objects.LodDimension;
 import com.seibel.lod.objects.RegionPos;
-import com.seibel.lod.objects.LevelPos.LevelPos;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
@@ -324,8 +324,8 @@ public class LodUtil
 			{
 				for (int z = centerChunk.z - chunkRenderDist; z < centerChunk.z + chunkRenderDist; z++)
 				{
-					LevelPos levelPos = new LevelPos(LodUtil.CHUNK_DETAIL_LEVEL, x, z);
-					if (!lodDim.doesDataExist(levelPos.clone()))
+					int[] levelPos = LevelPosUtil.createLevelPos(LodUtil.CHUNK_DETAIL_LEVEL, x, z);
+					if (!lodDim.doesDataExist(levelPos))
 						continue;
 					
 					short[] data = lodDim.getData(levelPos);

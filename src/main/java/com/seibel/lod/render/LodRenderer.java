@@ -23,6 +23,7 @@ import java.nio.FloatBuffer;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import com.seibel.lod.objects.LevelPosUtil;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.NVFogDistance;
@@ -40,7 +41,6 @@ import com.seibel.lod.handlers.ReflectionHandler;
 import com.seibel.lod.objects.LodDimension;
 import com.seibel.lod.objects.NearFarFogSettings;
 import com.seibel.lod.objects.RegionPos;
-import com.seibel.lod.objects.LevelPos.LevelPos;
 import com.seibel.lod.proxy.ClientProxy;
 import com.seibel.lod.util.DetailDistanceUtil;
 import com.seibel.lod.util.LodUtil;
@@ -124,7 +124,7 @@ public class LodRenderer
 	/**
 	 * This is used to determine if the LODs should be regenerated
 	 */
-	private LevelPos previousPos = new LevelPos((byte) 0, 0, 0);
+	private int[] previousPos = new int[]{0,0,0};
 	private int prevRenderDistance = 0;
 	private long prevPlayerPosTime = 0;
 	private long prevVanillaChunkTime = 0;
@@ -790,7 +790,7 @@ public class LodRenderer
 		{
 			DetailDistanceUtil.updateSettings();
 			fullRegen = true;
-			previousPos.changeParameters((byte) 4, mc.player.xChunk, mc.player.zChunk);
+			previousPos = LevelPosUtil.createLevelPos((byte) 4, mc.player.xChunk, mc.player.zChunk);
 			prevFogDistance = LodConfig.CLIENT.graphics.fogDistance.get();
 			prevRenderDistance = mc.options.renderDistance;
 			//should use this when it's ready
@@ -810,12 +810,12 @@ public class LodRenderer
 		// check if the player has moved
 		if (newTime - prevPlayerPosTime > LodConfig.CLIENT.buffers.bufferRebuildPlayerMoveTimeout.get())
 		{
-			if (previousPos.detailLevel == 0
-				|| mc.player.xChunk != previousPos.posX
-				|| mc.player.zChunk != previousPos.posZ)
+			if (LevelPosUtil.getDetailLevel(previousPos) == 0
+				|| mc.player.xChunk != LevelPosUtil.getPosX(previousPos)
+				|| mc.player.zChunk != LevelPosUtil.getPosZ(previousPos))
 			{
 				fullRegen = true;
-				previousPos.changeParameters((byte) 4, mc.player.xChunk, mc.player.zChunk);
+				previousPos = LevelPosUtil.createLevelPos((byte) 4, mc.player.xChunk, mc.player.zChunk);
 				//should use this when it's ready
 				vanillaRenderedChunks = new boolean[renderDistance*2+2][renderDistance*2+2];
 			}

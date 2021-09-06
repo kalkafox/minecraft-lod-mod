@@ -20,8 +20,6 @@ package com.seibel.lod.builders;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -29,13 +27,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import com.seibel.lod.objects.LevelPosUtil;
 import com.seibel.lod.objects.PosToRenderContainer;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.lwjgl.opengl.GL11;
 
 import com.seibel.lod.config.LodConfig;
 import com.seibel.lod.objects.LodDimension;
 import com.seibel.lod.objects.RegionPos;
-import com.seibel.lod.objects.LevelPos.LevelPos;
 import com.seibel.lod.proxy.ClientProxy;
 import com.seibel.lod.render.LodRenderer;
 import com.seibel.lod.util.LodThreadFactory;
@@ -257,6 +253,7 @@ public class LodBufferBuilder
 													}
 												}
 											}
+
 											LodConfig.CLIENT.graphics.lodTemplate.get().template.addLodToBuffer(currentBuffer, playerBlockPos, lodData, adjData,
 													levelPos, renderer.previousDebugMode);
 										}

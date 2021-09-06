@@ -21,7 +21,6 @@ import com.seibel.lod.config.LodConfig;
 import com.seibel.lod.enums.DebugMode;
 import com.seibel.lod.enums.ShadingMode;
 import com.seibel.lod.objects.DataPoint;
-import com.seibel.lod.objects.LevelPos.LevelPos;
 import com.seibel.lod.objects.LevelPosUtil;
 import com.seibel.lod.util.ColorUtil;
 import com.seibel.lod.util.LodUtil;

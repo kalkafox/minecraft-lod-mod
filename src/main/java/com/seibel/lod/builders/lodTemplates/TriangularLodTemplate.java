@@ -18,7 +18,6 @@
 package com.seibel.lod.builders.lodTemplates;
 
 import com.seibel.lod.enums.DebugMode;
-import com.seibel.lod.objects.LevelPos.LevelPos;
 
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.util.math.BlockPos;

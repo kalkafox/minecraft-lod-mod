@@ -1,26 +1,21 @@
 package com.seibel.lod.builders.worldGeneration;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.lang3.mutable.MutableBoolean;
+import com.seibel.lod.objects.LevelPosUtil;
+import com.seibel.lod.objects.PosToGenerateContainer;
 
 import com.seibel.lod.builders.GenerationRequest;
 import com.seibel.lod.builders.LodBuilder;
 import com.seibel.lod.config.LodConfig;
 import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.objects.LodDimension;
-import com.seibel.lod.objects.LevelPos.LevelPos;
 import com.seibel.lod.render.LodRenderer;
 import com.seibel.lod.util.DetailDistanceUtil;
 import com.seibel.lod.util.LodThreadFactory;
@@ -75,10 +70,6 @@ public class LodWorldGenerator
 	 */
 	public static final LodWorldGenerator INSTANCE = new LodWorldGenerator();
 
-	public volatile ConcurrentMap<LevelPos, MutableBoolean> nodeToGenerate;
-
-	SortedSet<LevelPos> nodeToGenerateListNear;
-	SortedSet<LevelPos> nodeToGenerateListFar;
 
 	private LodWorldGenerator()
 	{
@@ -125,21 +116,11 @@ public class LodWorldGenerator
 					//=======================================//
 					List<GenerationRequest> generationRequestList = new ArrayList<>(maxChunkGenRequests);
 
-					if (nodeToGenerate == null)
-						nodeToGenerate = new ConcurrentHashMap<>();
-
-
-					Comparator<LevelPos> posNearComparator = LevelPos.getPosComparator(
-							playerBlockPosRounded.getX(),
-							playerBlockPosRounded.getZ());
-					Comparator<LevelPos> posFarComparator = LevelPos.getPosAndDetailComparator(
-							playerBlockPosRounded.getX(),
-							playerBlockPosRounded.getZ());
-					nodeToGenerateListNear = new TreeSet(posNearComparator);
-					nodeToGenerateListFar = new TreeSet(posFarComparator);
-
-					lodDim.getDataToGenerate(
-							nodeToGenerate,
+					byte farDetail = (byte) 7;
+					PosToGenerateContainer posToGenerate = lodDim.getDataToGenerate(
+							farDetail,
+							maxChunkGenRequests,
+							0.25,
 							playerBlockPosRounded.getX(),
 							playerBlockPosRounded.getZ());
 
@@ -147,56 +128,16 @@ public class LodWorldGenerator
 					//here we prepare two sorted set
 					//the first contains the near pos to render
 					//the second contain the far pos to render
-					byte farDetail = (byte) 7;
-					for (LevelPos pos : nodeToGenerate.keySet())
+					int[] levelPos;
+					for (int index = 0; index < posToGenerate.getNumberOfPos(); index++)
 					{
-						if (!nodeToGenerate.get(pos).booleanValue())
-						{
-							nodeToGenerate.remove(pos);
-						} else
-						{
-							if (pos.detailLevel > farDetail){
-								nodeToGenerateListFar.add(pos);
-							}
-							nodeToGenerateListNear.add(pos);
-							nodeToGenerate.get(pos).setFalse();
-						}
-					}
-
-					int maxDistance;
-					byte circle;
-					LevelPos levelPos;
-					int requesting = maxChunkGenRequests;
-					int requestingFar = maxChunkGenRequests / 4;
-					while (requesting > 0 && !nodeToGenerateListNear.isEmpty())
-					{
-						levelPos = nodeToGenerateListNear.first();
-						//.out.println(levelPos);
-						nodeToGenerate.remove(levelPos);
-						nodeToGenerateListNear.remove(levelPos);
-						nodeToGenerateListFar.remove(levelPos);
-
-						//maxDistance = levelPos.maxDistance(
-						//		playerBlockPosRounded.getX(),
-						//		playerBlockPosRounded.getZ());
-						//circle = DetailDistanceUtil.getDistanceGenerationInverse(maxDistance);
-						generationRequestList.add(new GenerationRequest(levelPos, DetailDistanceUtil.getDistanceGenerationMode(levelPos.detailLevel)));
-						requesting--;
-						if (requestingFar > 0 && !nodeToGenerateListFar.isEmpty())
-						{
-							levelPos = nodeToGenerateListFar.first();
-							nodeToGenerate.remove(levelPos);
-							nodeToGenerateListNear.remove(levelPos);
-							nodeToGenerateListFar.remove(levelPos);
-							if (levelPos.detailLevel >= farDetail)
-							{
-								//maxDistance = levelPos.maxDistance(	playerBlockPosRounded.getX(), playerBlockPosRounded.getZ());
-								//circle = DetailDistanceUtil.getDistanceGenerationInverse(maxDistance);
-								generationRequestList.add(new GenerationRequest(levelPos, DetailDistanceUtil.getDistanceGenerationMode(levelPos.detailLevel)));
-								requestingFar--;
-								requesting--;
-							}
-						}
+						levelPos = posToGenerate.getNthPos(index);
+						generationRequestList.add(
+								new GenerationRequest(
+										levelPos,
+										DetailDistanceUtil.getDistanceGenerationMode(LevelPosUtil.getDetailLevel(levelPos))
+								)
+						);
 					}
 
 
