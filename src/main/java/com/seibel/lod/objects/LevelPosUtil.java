@@ -162,6 +162,30 @@ public class LevelPosUtil
 		return minDistance(getDetailLevel(levelPos), getPosX(levelPos), getPosZ(levelPos), playerPosX, playerPosZ);
 	}
 
+	public static int convert(byte detailLevel, int pos, byte newDetailLevel)
+	{
+		int width;
+		if (newDetailLevel >= detailLevel)
+		{
+			width = 1 << (newDetailLevel - detailLevel);
+			return Math.floorDiv(pos, width);
+		} else
+		{
+			width = 1 << (detailLevel - newDetailLevel);
+			return pos * width;
+		}
+	}
+
+	public static int getRegion(byte detailLevel, int pos)
+	{
+		return Math.floorDiv(pos, 1 << (LodUtil.REGION_DETAIL_LEVEL - detailLevel));
+	}
+
+	public static int getRegionModule(byte detailLevel, int pos)
+	{
+		return Math.floorMod(pos, 1 << (LodUtil.REGION_DETAIL_LEVEL - detailLevel));
+	}
+
 	public static int minDistance(byte detailLevel, int posX, int posZ, int playerPosX, int playerPosZ)
 	{
 		int width = 1 << detailLevel;
@@ -240,4 +264,8 @@ public class LevelPosUtil
 	{
 		return (getDetailLevel(levelPos) + " " + getPosX(levelPos) + " " + getPosZ(levelPos));
 	}
+	public static String toString(byte detailLevel, int posX, int posZ)
+{
+	return (detailLevel + " " + posX + " " + posZ);
+}
 }

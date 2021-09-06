@@ -268,20 +268,20 @@ public class LodDimension
 	 * Returns null if the region doesn't exist
 	 * or is outside the loaded area.
 	 */
-	public LodRegion getRegion(int[] levelPos)
+	public LodRegion getRegion(byte detailLevel, int posX, int posZ)
 	{
 
-		int regionPosX = LevelPosUtil.getRegionPosX(levelPos);
-		int regionPosZ = LevelPosUtil.getRegionPosZ(levelPos);
+		int regionPosX = LevelPosUtil.getRegion(detailLevel, posX);
+		int regionPosZ = LevelPosUtil.getRegion(detailLevel, posZ);
 		int xIndex = (regionPosX- center.x) + halfWidth;
 		int zIndex = (regionPosZ - center.z) + halfWidth;
 
 		if (!regionIsInRange(regionPosX, regionPosZ))
-			throw new ArrayIndexOutOfBoundsException("Region for level pos " + levelPos + " out of range");
+			throw new ArrayIndexOutOfBoundsException("Region for level pos " + LevelPosUtil.toString(detailLevel, posX, posZ) + " out of range");
 		else if (regions[xIndex][zIndex] == null)
-			throw new InvalidParameterException("Region for level pos " + levelPos + " not currently initialized");
-		else if (regions[xIndex][zIndex].getMinDetailLevel() > LevelPosUtil.getDetailLevel(levelPos))
-			throw new InvalidParameterException("Region for level pos " + levelPos + " currently only reach level " + regions[xIndex][zIndex].getMinDetailLevel());
+			throw new InvalidParameterException("Region for level pos " + LevelPosUtil.toString(detailLevel, posX, posZ)  + " not currently initialized");
+		else if (regions[xIndex][zIndex].getMinDetailLevel() > detailLevel)
+			throw new InvalidParameterException("Region for level pos " + LevelPosUtil.toString(detailLevel, posX, posZ)  + " currently only reach level " + regions[xIndex][zIndex].getMinDetailLevel());
 		return regions[xIndex][zIndex];
 	}
 
@@ -437,20 +437,20 @@ public class LodDimension
 	 * stored in the LOD. If an LOD already exists at the given
 	 * coordinates it will be overwritten.
 	 */
-	public synchronized Boolean addData(int[] levelPos, short[] lodDataPoint, boolean dontSave, boolean serverQuality)
+	public synchronized Boolean addData(byte detailLevel, int posX, int posZ, short[] lodDataPoint, boolean dontSave, boolean serverQuality)
 	{
 
 		// don't continue if the region can't be saved
-		int regionPosX = LevelPosUtil.getRegionPosX(levelPos);
-		int regionPosZ = LevelPosUtil.getRegionPosZ(levelPos);
+		int regionPosX = LevelPosUtil.getRegion(detailLevel, posX);
+		int regionPosZ = LevelPosUtil.getRegion(detailLevel, posZ);
 		if (!regionIsInRange(regionPosX, regionPosZ))
 		{
 			return false;
 		}
 
-		LodRegion region = getRegion(levelPos);
+		LodRegion region = getRegion(detailLevel, posX, posZ);
 
-		boolean nodeAdded = region.addData(levelPos, lodDataPoint, serverQuality);
+		boolean nodeAdded = region.addData(detailLevel, posX, posZ, lodDataPoint, serverQuality);
 		// only save valid LODs to disk
 		if (!dontSave && fileHandler != null)
 		{
@@ -540,21 +540,21 @@ public class LodDimension
 	 * Returns null if the LodChunk doesn't exist or
 	 * is outside the loaded area.
 	 */
-	public short[] getData(int[] levelPos)
+	public short[] getData(byte detailLevel, int posX, int posZ)
 	{
-		if (LevelPosUtil.getDetailLevel(levelPos) > LodUtil.REGION_DETAIL_LEVEL)
-			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + LevelPosUtil.getDetailLevel(levelPos) + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
+		if (detailLevel > LodUtil.REGION_DETAIL_LEVEL)
+			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
 
 		try
 		{
-			LodRegion region = getRegion(levelPos);
+			LodRegion region = getRegion(detailLevel, posX, posZ);
 
 			if (region == null)
 			{
 				return null;
 			}
 
-			return region.getData(levelPos);
+			return region.getData(detailLevel, posX, posZ);
 
 		} catch (Exception e)
 		{
@@ -563,42 +563,37 @@ public class LodDimension
 	}
 
 	/**
-	 * Get the data point at the given X and Z coordinates
-	 * in this dimension.
-	 * <br>
-	 * Returns null if the LodChunk doesn't exist or
-	 * is outside the loaded area.
 	 */
-	public void updateData(int[] levelPos)
+	public void updateData(byte detailLevel, int posX, int posZ)
 	{
-		if (LevelPosUtil.getDetailLevel(levelPos) > LodUtil.REGION_DETAIL_LEVEL)
-			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + LevelPosUtil.getDetailLevel(levelPos) + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
+		if (detailLevel > LodUtil.REGION_DETAIL_LEVEL)
+			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
 
-		LodRegion region = getRegion(levelPos);
+		LodRegion region = getRegion(detailLevel, posX, posZ);
 
 
 		if (region == null)
 		{
 			return;
 		}
-		region.updateArea(levelPos);
+		region.updateArea(detailLevel, posX, posZ);
 	}
 
 	/**
 	 * return true if and only if the node at that position exist
 	 */
-	public boolean doesDataExist(int[] levelPos)
+	public boolean doesDataExist(byte detailLevel, int posX, int posZ)
 	{
 		try
 		{
-			LodRegion region = getRegion(levelPos);
+			LodRegion region = getRegion(detailLevel, posX, posZ);
 
 			if (region == null)
 			{
 				return false;
 			}
 
-			return region.doesDataExist(levelPos);
+			return region.doesDataExist(detailLevel, posX, posZ);
 		} catch (Exception e)
 		{
 			return false;

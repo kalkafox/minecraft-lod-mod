@@ -3,6 +3,7 @@ package com.seibel.lod.objects;
 import com.seibel.lod.util.LodUtil;
 
 import java.util.Arrays;
+import java.util.logging.Level;
 
 public class PosToRenderContainer
 {
@@ -31,20 +32,34 @@ public class PosToRenderContainer
 
 	public void addPosToRender(int[] levelPos)
 	{
-		if(numberOfPosToRender >= posToRender.length)
-			posToRender = Arrays.copyOf(posToRender, posToRender.length*2);
-		posToRender[numberOfPosToRender] = levelPos;
-		numberOfPosToRender++;
-		int[] newLevelPos = LevelPosUtil.getRegionModule(LevelPosUtil.convert(levelPos, minDetail));
-		population[LevelPosUtil.getPosX(newLevelPos)][LevelPosUtil.getPosZ(newLevelPos)] = (byte) (LevelPosUtil.getDetailLevel(levelPos) + 1);
+		addPosToRender(LevelPosUtil.getDetailLevel(levelPos), LevelPosUtil.getPosX(levelPos), LevelPosUtil.getPosZ(levelPos));
 	}
 
-	public boolean contains(int[] levelPos)
+	public void addPosToRender(byte detailLevel, int posX, int posZ)
 	{
-		if(LevelPosUtil.getRegionPosX(levelPos) == regionPosX && LevelPosUtil.getRegionPosZ(levelPos) == regionPosZ)
+		if(numberOfPosToRender >= posToRender.length)
+			posToRender = Arrays.copyOf(posToRender, posToRender.length*2);
+		posToRender[numberOfPosToRender][0] = detailLevel;
+		posToRender[numberOfPosToRender][1] = posX;
+		posToRender[numberOfPosToRender][2] = posZ;
+		numberOfPosToRender++;
+		population[LevelPosUtil.getRegionModule((byte) 0, LevelPosUtil.convert(detailLevel,posX,(byte) 0))]
+				[LevelPosUtil.getRegionModule((byte) 0, LevelPosUtil.convert(detailLevel,posZ,(byte) 0))] = (byte) (detailLevel + 1);
+	}
+
+	public boolean contains(int[] levelPos){
+		return contains(
+				LevelPosUtil.getDetailLevel(levelPos),
+				LevelPosUtil.getPosX(levelPos),
+				LevelPosUtil.getPosZ(levelPos));
+	}
+
+	public boolean contains(byte detailLevel, int posX, int posZ)
+	{
+		if(LevelPosUtil.getRegion(detailLevel, posX) == regionPosX && LevelPosUtil.getRegion(detailLevel, posZ) == regionPosZ)
 		{
-			int[] newLevelPos = LevelPosUtil.convert(LevelPosUtil.getRegionModule(levelPos), minDetail);
-			return (population[LevelPosUtil.getPosX(newLevelPos)][LevelPosUtil.getPosZ(newLevelPos)] == (LevelPosUtil.getDetailLevel(levelPos) + 1));
+			return (population[LevelPosUtil.getRegionModule((byte) 0, LevelPosUtil.convert(detailLevel,posX,(byte) 0))]
+					        [LevelPosUtil.getRegionModule((byte) 0, LevelPosUtil.convert(detailLevel,posZ,(byte) 0))] == (detailLevel + 1));
 		}else
 		{
 			return false;
