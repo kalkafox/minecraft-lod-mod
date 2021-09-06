@@ -3,11 +3,11 @@ package com.seibel.lod.objects;
 import java.io.Serializable;
 import java.util.concurrent.ConcurrentMap;
 
+import com.seibel.lod.objects.LevelPos.LevelPos;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import com.seibel.lod.builders.LodBuilder;
 import com.seibel.lod.enums.DistanceGenerationMode;
-import com.seibel.lod.objects.LevelPos.LevelPos;
 import com.seibel.lod.proxy.ClientProxy;
 import com.seibel.lod.util.DetailDistanceUtil;
 import com.seibel.lod.util.LodUtil;
@@ -72,20 +72,7 @@ public class LodRegion implements Serializable
 			depth[lod] = new short[size][size];
 			dataExistence[lod] = new boolean[size][size];
 		}
-		int width;
-		LevelPos levelPos = new LevelPos();
-		for (byte tempLod = (byte) (minDetailLevel + 1); tempLod <= LodUtil.REGION_DETAIL_LEVEL; tempLod++)
-		{
-			width = 1 << (LodUtil.REGION_DETAIL_LEVEL - tempLod);
-			for (int x = 0; x < width; x++)
-			{
-				for (int z = 0; z < width; z++)
-				{
-					levelPos.changeParameters(tempLod, x, z);
-					update(levelPos);
-				}
-			}
-		}
+		updateArea(LevelPosUtil.createLevelPos(LodUtil.REGION_DETAIL_LEVEL, regionPosX, regionPosZ));
 	}
 
 	public LodRegion(byte minDetailLevel, RegionPos regionPos, DistanceGenerationMode generationMode)
@@ -123,22 +110,26 @@ public class LodRegion implements Serializable
 	 * @param dataPoint
 	 * @return
 	 */
-	public boolean addData(LevelPos levelPos, short[] dataPoint, boolean serverQuality)
+	public boolean addData(int[] levelPos, short[] dataPoint, boolean serverQuality)
 	{
-		levelPos.performRegionModule();
+		//System.out.println(levelPos[0] + " " + levelPos[1] + " " + levelPos[2]);
+		levelPos = LevelPosUtil.getRegionModule(levelPos);
+		byte detailLevel = LevelPosUtil.getDetailLevel(levelPos);
+		int posX = LevelPosUtil.getPosX(levelPos);
+		int posZ = LevelPosUtil.getPosZ(levelPos);
 		if (!doesDataExist(levelPos) || serverQuality)
 		{
 
 			//update the number of node present
-			if (this.dataExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ]) numberOfPoints++;
+			if (this.dataExistence[detailLevel][posX][posZ]) numberOfPoints++;
 
 			//add the node data
-			this.height[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = DataPoint.getHeight(dataPoint);
-			this.depth[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = DataPoint.getDepth(dataPoint);
-			this.colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][0] = (byte) (DataPoint.getRed(dataPoint) - 128);
-			this.colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][1] = (byte) (DataPoint.getGreen(dataPoint) - 128);
-			this.colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][2] = (byte) (DataPoint.getBlue(dataPoint) - 128);
-			this.dataExistence[levelPos.detailLevel][levelPos.posX][levelPos.posZ] = true;
+			this.height[detailLevel][posX][posZ] = DataPoint.getHeight(dataPoint);
+			this.depth[detailLevel][posX][posZ] = DataPoint.getDepth(dataPoint);
+			this.colors[detailLevel][posX][posZ][0] = (byte) (DataPoint.getRed(dataPoint) - 128);
+			this.colors[detailLevel][posX][posZ][1] = (byte) (DataPoint.getGreen(dataPoint) - 128);
+			this.colors[detailLevel][posX][posZ][2] = (byte) (DataPoint.getBlue(dataPoint) - 128);
+			this.dataExistence[detailLevel][posX][posZ] = true;
 			return true;
 		} else
 		{
@@ -369,43 +360,44 @@ public class LodRegion implements Serializable
 	/**
 	 * @param levelPos
 	 */
-	public void updateArea(LevelPos levelPos)
+	public void updateArea(int[] levelPos)
 	{
 		int width;
 		int startX;
 		int startZ;
-		byte detailLevel = levelPos.detailLevel;
-		int posX = levelPos.posX;
-		int posZ = levelPos.posZ;
+		byte detailLevel = LevelPosUtil.getDetailLevel(levelPos);
+		int posX = LevelPosUtil.getPosX(levelPos);
+		int posZ = LevelPosUtil.getPosZ(levelPos);
+		int[] tempoLevelPos;
 		for (byte bottom = (byte) (minDetailLevel + 1); bottom <= detailLevel; bottom++)
 		{
-			levelPos.convert(bottom);
-			startX = levelPos.posX;
-			startZ = levelPos.posZ;
+			tempoLevelPos = LevelPosUtil.convert(levelPos, bottom);
+			startX = LevelPosUtil.getPosX(tempoLevelPos);
+			startZ = LevelPosUtil.getPosZ(tempoLevelPos);
 			width = 1 << (detailLevel - bottom);
 			for (int x = 0; x < width; x++)
 			{
 				for (int z = 0; z < width; z++)
 				{
-					levelPos.changeParameters(bottom, startX + x, startZ + z);
-					update(levelPos);
+					tempoLevelPos = LevelPosUtil.createLevelPos(bottom, startX + x, startZ + z);
+					update(tempoLevelPos);
 				}
 			}
-			levelPos.changeParameters(detailLevel, posX, posZ);
 		}
 		for (byte tempLod = (byte) (detailLevel + 1); tempLod <= LodUtil.REGION_DETAIL_LEVEL; tempLod++)
 		{
-			levelPos.convert(tempLod);
-			update(levelPos);
+			tempoLevelPos = LevelPosUtil.convert(levelPos, tempLod);
+			update(tempoLevelPos);
 		}
 	}
 
 	/**
 	 * @param levelPos
 	 */
-	private void update(LevelPos levelPos)
+	private void update(int[] levelPos)
 	{
-		levelPos.performRegionModule();
+
+		levelPos = LevelPosUtil.getRegionModule(levelPos);
 		int numberOfChildren = 0;
 		int numberOfVoidChildren = 0;
 
@@ -417,9 +409,10 @@ public class LodRegion implements Serializable
 		int newPosX;
 		int newPosZ;
 		byte newDetailLevel;
-		int detailLevel = levelPos.detailLevel;
-		int posX = levelPos.posX;
-		int posZ = levelPos.posZ;
+		int detailLevel = LevelPosUtil.getDetailLevel(levelPos);
+		int posX = LevelPosUtil.getPosX(levelPos);
+		int posZ = LevelPosUtil.getPosZ(levelPos);
+		int[] tempLevelPos;
 		for (int x = 0; x <= 1; x++)
 		{
 			for (int z = 0; z <= 1; z++)
@@ -427,8 +420,8 @@ public class LodRegion implements Serializable
 				newPosX = 2 * posX + x;
 				newPosZ = 2 * posZ + z;
 				newDetailLevel = (byte) (detailLevel - 1);
-				levelPos.changeParameters(newDetailLevel, newPosX, newPosZ);
-				if (doesDataExist(levelPos))
+				tempLevelPos = LevelPosUtil.createLevelPos(newDetailLevel, newPosX, newPosZ);
+				if (doesDataExist(tempLevelPos))
 				{
 					if (height[newDetailLevel][newPosX][newPosZ] != LodBuilder.DEFAULT_HEIGHT
 							    && depth[newDetailLevel][newPosX][newPosZ] != LodBuilder.DEFAULT_DEPTH)
@@ -468,6 +461,22 @@ public class LodRegion implements Serializable
 			depth[detailLevel][posX][posZ] = LodBuilder.DEFAULT_DEPTH;
 
 			dataExistence[detailLevel][posX][posZ] = true;
+		}
+	}
+
+	/**
+	 * @param levelPos
+	 * @return
+	 */
+	public boolean doesDataExist(int[] levelPos)
+	{
+		try
+		{
+			levelPos = LevelPosUtil.getRegionModule(levelPos);
+			return dataExistence[LevelPosUtil.getDetailLevel(levelPos)][LevelPosUtil.getPosX(levelPos)][LevelPosUtil.getPosZ(levelPos)];
+		} catch (NullPointerException e)
+		{
+			return false;
 		}
 	}
 

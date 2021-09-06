@@ -290,6 +290,29 @@ public class LodDimension
 	 * Returns null if the region doesn't exist
 	 * or is outside the loaded area.
 	 */
+	public LodRegion getRegion(int[] levelPos)
+	{
+
+		int regionPosX = LevelPosUtil.getRegionPosX(levelPos);
+		int regionPosZ = LevelPosUtil.getRegionPosZ(levelPos);
+		int xIndex = (regionPosX- center.x) + halfWidth;
+		int zIndex = (regionPosZ - center.z) + halfWidth;
+
+		if (!regionIsInRange(regionPosX, regionPosZ))
+			throw new ArrayIndexOutOfBoundsException("Region for level pos " + levelPos + " out of range");
+		else if (regions[xIndex][zIndex] == null)
+			throw new InvalidParameterException("Region for level pos " + levelPos + " not currently initialized");
+		else if (regions[xIndex][zIndex].getMinDetailLevel() > LevelPosUtil.getDetailLevel(levelPos))
+			throw new InvalidParameterException("Region for level pos " + levelPos + " currently only reach level " + regions[xIndex][zIndex].getMinDetailLevel());
+		return regions[xIndex][zIndex];
+	}
+
+	/**
+	 * Gets the region at the given X and Z
+	 * <br>
+	 * Returns null if the region doesn't exist
+	 * or is outside the loaded area.
+	 */
 	public LodRegion getRegion(RegionPos regionPos)
 	{
 		int xIndex = (regionPos.x - center.x) + halfWidth;
@@ -439,12 +462,13 @@ public class LodDimension
 	 * stored in the LOD. If an LOD already exists at the given
 	 * coordinates it will be overwritten.
 	 */
-	public synchronized Boolean addData(LevelPos levelPos, short[] lodDataPoint, boolean dontSave, boolean serverQuality)
+	public synchronized Boolean addData(int[] levelPos, short[] lodDataPoint, boolean dontSave, boolean serverQuality)
 	{
 
 		// don't continue if the region can't be saved
-		RegionPos regionPos = levelPos.getRegionPos();
-		if (!regionIsInRange(regionPos.x, regionPos.z))
+		int regionPosX = LevelPosUtil.getRegionPosX(levelPos);
+		int regionPosZ = LevelPosUtil.getRegionPosZ(levelPos);
+		if (!regionIsInRange(regionPosX, regionPosZ))
 		{
 			return false;
 		}
@@ -458,8 +482,8 @@ public class LodDimension
 			try
 			{
 				// mark the region as dirty so it will be saved to disk
-				int xIndex = (regionPos.x - center.x) + halfWidth;
-				int zIndex = (regionPos.z - center.z) + halfWidth;
+				int xIndex = (regionPosX - center.x) + halfWidth;
+				int zIndex = (regionPosZ - center.z) + halfWidth;
 				isRegionDirty[xIndex][zIndex] = true;
 				regen[xIndex][zIndex] = true;
 				regenDimension = true;
@@ -582,10 +606,10 @@ public class LodDimension
 	 * Returns null if the LodChunk doesn't exist or
 	 * is outside the loaded area.
 	 */
-	public void updateData(LevelPos levelPos)
+	public void updateData(int[] levelPos)
 	{
-		if (levelPos.detailLevel > LodUtil.REGION_DETAIL_LEVEL)
-			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + levelPos.detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
+		if (LevelPosUtil.getDetailLevel(levelPos) > LodUtil.REGION_DETAIL_LEVEL)
+			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + LevelPosUtil.getDetailLevel(levelPos) + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
 
 		LodRegion region = getRegion(levelPos);
 

@@ -25,6 +25,7 @@ import com.seibel.lod.config.LodConfig;
 import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.enums.LodDetail;
 import com.seibel.lod.objects.DataPoint;
+import com.seibel.lod.objects.LevelPosUtil;
 import com.seibel.lod.objects.LodDimension;
 import com.seibel.lod.objects.LodWorld;
 import com.seibel.lod.objects.LevelPos.LevelPos;
@@ -174,11 +175,12 @@ public class LodBuilder
 		short height;
 		short depth;
 		short[] data;
-		LevelPos levelPos = new LevelPos((byte) 0, 0, 0);
-		levelPos.changeParameters(LodUtil.CHUNK_DETAIL_LEVEL, chunk.getPos().x, chunk.getPos().z);
-		levelPos.convert(LodUtil.REGION_DETAIL_LEVEL);
+		int[] levelPos;
 		try
 		{
+			levelPos = LevelPosUtil.createLevelPos(LodUtil.CHUNK_DETAIL_LEVEL,
+					chunk.getPos().x,
+					chunk.getPos().z);
 			byte minDetailLevel = lodDim.getRegion(levelPos).getMinDetailLevel();
 			LodDetail detail = DetailDistanceUtil.getLodGenDetail(minDetailLevel);
 			for (int i = 0; i < detail.dataPointLengthCount * detail.dataPointLengthCount; i++)
@@ -200,10 +202,11 @@ public class LodBuilder
 							startZ, endX, endZ);
 					depth = 0;
 				}
-				levelPos.changeParameters((byte) 0,
+				levelPos = LevelPosUtil.createLevelPos((byte) 0,
 						chunk.getPos().x * 16 + startX,
 						chunk.getPos().z * 16 + startZ);
-				levelPos.convert(detail.detailLevel);
+
+				levelPos = LevelPosUtil.convert(levelPos,detail.detailLevel);
 				boolean isServer = config.distanceGenerationMode == DistanceGenerationMode.SERVER;
 				data = DataPoint.createDataPoint(height, depth, color[0], color[1], color[2]);
 				lodDim.addData(levelPos,
@@ -211,7 +214,9 @@ public class LodBuilder
 						false,
 						isServer);
 			}
-			levelPos.changeParameters(LodUtil.CHUNK_DETAIL_LEVEL, chunk.getPos().x, chunk.getPos().z);
+			levelPos = LevelPosUtil.createLevelPos(LodUtil.CHUNK_DETAIL_LEVEL,
+					chunk.getPos().x,
+					chunk.getPos().z);
 			lodDim.updateData(levelPos);
 		} catch (Exception e)
 		{
