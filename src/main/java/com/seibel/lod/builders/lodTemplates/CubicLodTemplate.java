@@ -22,6 +22,7 @@ import com.seibel.lod.enums.DebugMode;
 import com.seibel.lod.enums.ShadingMode;
 import com.seibel.lod.objects.DataPoint;
 import com.seibel.lod.objects.LevelPos.LevelPos;
+import com.seibel.lod.objects.LevelPosUtil;
 import com.seibel.lod.util.ColorUtil;
 import com.seibel.lod.util.LodUtil;
 
@@ -48,25 +49,27 @@ public class CubicLodTemplate extends AbstractLodTemplate
 	
 	@Override
 	public void addLodToBuffer(BufferBuilder buffer, BlockPos playerBlockPos, short[] data, short[][][] adjData,
-			LevelPos levelPos, DebugMode debugging)
+			int[] levelPos, DebugMode debugging)
 	{
 		AxisAlignedBB bbox;
-		
-		int width = 1 << levelPos.detailLevel;
+		byte detailLevel = LevelPosUtil.getDetailLevel(levelPos);
+		int posX = LevelPosUtil.getPosX(levelPos);
+		int posZ = LevelPosUtil.getPosZ(levelPos);
+		int width = 1 << detailLevel;
 		
 		// add each LOD for the detail level
 		bbox = generateBoundingBox(
 				DataPoint.getHeight(data),
 				DataPoint.getDepth(data),
 				width,
-				levelPos.posX * width,
+				posX * width,
 				0,
-				levelPos.posZ * width);
+				posZ * width);
 		
 		int color = DataPoint.getColor(data);
 		if (debugging != DebugMode.OFF)
 		{
-			color = LodUtil.DEBUG_DETAIL_LEVEL_COLORS[levelPos.detailLevel].getRGB();
+			color = LodUtil.DEBUG_DETAIL_LEVEL_COLORS[detailLevel].getRGB();
 		}
 		
 		if (bbox != null)

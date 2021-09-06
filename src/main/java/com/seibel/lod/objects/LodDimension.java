@@ -540,19 +540,21 @@ public class LodDimension
 	 *
 	 * @return list of nodes
 	 */
-	public void getDataToRender(ConcurrentMap<LevelPos, MutableBoolean> dataToRender, RegionPos regionPos, int playerPosX, int playerPosZ)
+	public PosToRenderContainer getDataToRender(RegionPos regionPos, int playerPosX, int playerPosZ)
 	{
 		try
 		{
 			LodRegion region = getRegion(regionPos);
-			region.getDataToRender(dataToRender, playerPosX, playerPosZ);
+			return region.getDataToRender(playerPosX, playerPosZ);
 		} catch (NullPointerException e)
 		{
 			System.out.println(regionPos);
 			e.printStackTrace();
+			return null;
 		} catch (Exception e)
 		{
 			//e.printStackTrace();
+			return null;
 		}
 	}
 
@@ -590,7 +592,7 @@ public class LodDimension
 				return null;
 			}
 
-			return region.getData(levelPos);
+			return region.getData(LevelPosUtil.createLevelPos(levelPos.detailLevel, levelPos.posX,levelPos.posZ));
 
 		} catch (Exception e)
 		{
@@ -598,6 +600,34 @@ public class LodDimension
 		}
 	}
 
+	/**
+	 * Get the data point at the given X and Z coordinates
+	 * in this dimension.
+	 * <br>
+	 * Returns null if the LodChunk doesn't exist or
+	 * is outside the loaded area.
+	 */
+	public short[] getData(int[] levelPos)
+	{
+		if (LevelPosUtil.getDetailLevel(levelPos) > LodUtil.REGION_DETAIL_LEVEL)
+			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + LevelPosUtil.getDetailLevel(levelPos) + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
+
+		try
+		{
+			LodRegion region = getRegion(levelPos);
+
+			if (region == null)
+			{
+				return null;
+			}
+
+			return region.getData(levelPos);
+
+		} catch (Exception e)
+		{
+			return null;
+		}
+	}
 
 	/**
 	 * Get the data point at the given X and Z coordinates
@@ -636,6 +666,27 @@ public class LodDimension
 			}
 
 			return region.doesDataExist(levelPos.clone());
+		} catch (Exception e)
+		{
+			return false;
+		}
+	}
+
+	/**
+	 * return true if and only if the node at that position exist
+	 */
+	public boolean doesDataExist(int[] levelPos)
+	{
+		try
+		{
+			LodRegion region = getRegion(levelPos);
+
+			if (region == null)
+			{
+				return false;
+			}
+
+			return region.doesDataExist(levelPos);
 		} catch (Exception e)
 		{
 			return false;

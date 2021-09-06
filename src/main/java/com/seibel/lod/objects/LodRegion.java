@@ -20,7 +20,7 @@ import com.seibel.lod.util.LodUtil;
  * 0 for x, 1 for y, 2 for z in 3D
  */
 
-public class LodRegion implements Serializable
+public class LodRegion
 {
 	//x coord,
 	private byte minDetailLevel;
@@ -143,14 +143,17 @@ public class LodRegion implements Serializable
 	 * @param levelPos
 	 * @return the data at the relative pos and level
 	 */
-	public short[] getData(LevelPos levelPos)
+	public short[] getData(int[] levelPos)
 	{
-		levelPos = levelPos.getRegionModuleLevelPos();
-		return new short[]{height[levelPos.detailLevel][levelPos.posX][levelPos.posZ],
-				depth[levelPos.detailLevel][levelPos.posX][levelPos.posZ],
-				(short) (colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][0] + 128),
-				(short) (colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][1] + 128),
-				(short) (colors[levelPos.detailLevel][levelPos.posX][levelPos.posZ][2] + 128)
+		levelPos = LevelPosUtil.getRegionModule(levelPos);
+		byte detailLevel = LevelPosUtil.getDetailLevel(levelPos);
+		int posX = LevelPosUtil.getPosX(levelPos);
+		int posZ = LevelPosUtil.getPosZ(levelPos);
+		return new short[]{height[detailLevel][posX][posZ],
+				depth[detailLevel][posX][posZ],
+				(short) (colors[detailLevel][posX][posZ][0] + 128),
+				(short) (colors[detailLevel][posX][posZ][1] + 128),
+				(short) (colors[detailLevel][posX][posZ][2] + 128)
 		};
 	}
 
@@ -271,49 +274,38 @@ public class LodRegion implements Serializable
 	/**
 	 * @return
 	 */
-	public void getDataToRender(ConcurrentMap<LevelPos, MutableBoolean> dataToRender, int playerPosX, int playerPosZ)
+	public PosToRenderContainer getDataToRender(int playerPosX, int playerPosZ)
 	{
-		LevelPos levelPos = new LevelPos(LodUtil.REGION_DETAIL_LEVEL, 0, 0);
-		getDataToRender(dataToRender, levelPos, playerPosX, playerPosZ);
+		int[] levelPos = LevelPosUtil.createLevelPos(LodUtil.REGION_DETAIL_LEVEL, 0, 0);
+		PosToRenderContainer posToRender = new PosToRenderContainer(minDetailLevel);
+		getDataToRender(posToRender, levelPos, playerPosX, playerPosZ);
+		return posToRender;
 	}
 
 	/**
 	 * @return
 	 */
-	private void getDataToRender(ConcurrentMap<LevelPos, MutableBoolean> dataToRender, LevelPos levelPos, int playerPosX, int playerPosZ)
+	private void getDataToRender(PosToRenderContainer posToRender, int[] levelPos, int playerPosX, int playerPosZ)
 	{
-		int size = 1 << (LodUtil.REGION_DETAIL_LEVEL - levelPos.detailLevel);
 
-		int posX = levelPos.posX;
-		int posZ = levelPos.posZ;
-		byte detailLevel = levelPos.detailLevel;
+		byte detailLevel = LevelPosUtil.getDetailLevel(levelPos);
+		int posX = LevelPosUtil.getPosX(levelPos);
+		int posZ = LevelPosUtil.getPosZ(levelPos);
+		int size = 1 << (LodUtil.REGION_DETAIL_LEVEL - detailLevel);
+		int[] tempLevelPos;
 
 		//here i calculate the the LevelPos is in range
 		//This is important to avoid any kind of hole in the rendering
-		int maxDistance = levelPos.maxDistance(playerPosX, playerPosZ, regionPosX, regionPosZ);
+		int maxDistance = LevelPosUtil.maxDistance(detailLevel, posX, posZ, playerPosX, playerPosZ, regionPosX, regionPosZ);
 
 		byte supposedLevel = DetailDistanceUtil.getLodDrawDetail(DetailDistanceUtil.getDistanceRenderingInverse(maxDistance));
 		if (supposedLevel > detailLevel)
 			return;
 		else if (supposedLevel == detailLevel)
 		{
-			if (dataToRender.containsKey(levelPos))
-			{
-				levelPos.changeParameters(detailLevel, posX + regionPosX * size, posZ + regionPosZ * size);
-				try
-				{
-					dataToRender.get(levelPos).setTrue();
-				}catch (Exception e){
-					/*TODO Fix this exception*/
-					// This seems to happen more often when using an elytra in an amplified world
-					// maybe it has something to do with the dimensions moving?
-					ClientProxy.LOGGER.error("getDataToRender had a error at " + levelPos.getRegionPos() + ". Exception: " + e.getMessage());
-					dataToRender.put(new LevelPos(detailLevel, posX + regionPosX * size, posZ + regionPosZ * size), new MutableBoolean(true));
-				}
-			} else
-			{
-				dataToRender.put(new LevelPos(detailLevel, posX + regionPosX * size, posZ + regionPosZ * size), new MutableBoolean(true));
-			}
+			posToRender.addPosToRender(LevelPosUtil.createLevelPos(detailLevel,
+					posX + regionPosX * size,
+					posZ + regionPosZ * size));
 		} else //case where (detailLevel > supposedLevel)
 		{
 			int childPosX = posX * 2;
@@ -323,8 +315,8 @@ public class LodRegion implements Serializable
 			{
 				for (int z = 0; z <= 1; z++)
 				{
-					levelPos.changeParameters((byte) (detailLevel - 1), childPosX + x, childPosZ + z);
-					if (doesDataExist(levelPos)) childrenCount++;
+					tempLevelPos = LevelPosUtil.createLevelPos((byte) (detailLevel - 1), childPosX + x, childPosZ + z);
+					if (doesDataExist(tempLevelPos)) childrenCount++;
 				}
 			}
 
@@ -335,23 +327,15 @@ public class LodRegion implements Serializable
 				{
 					for (int z = 0; z <= 1; z++)
 					{
-						levelPos.changeParameters((byte) (detailLevel - 1), childPosX + x, childPosZ + z);
-						getDataToRender(dataToRender, levelPos, playerPosX, playerPosZ);
+						tempLevelPos = LevelPosUtil.createLevelPos((byte) (detailLevel - 1), childPosX + x, childPosZ + z);
+						getDataToRender(posToRender, tempLevelPos, playerPosX, playerPosZ);
 					}
 				}
 			} else
 			{
-
-				levelPos.changeParameters(detailLevel, posX + regionPosX * size, posZ + regionPosZ * size);
-				if (dataToRender.containsKey(levelPos))
-				{
-					if (dataToRender.get(levelPos) == null)
-						dataToRender.replace(levelPos, new MutableBoolean());
-					dataToRender.get(levelPos).setTrue();
-				} else
-				{
-					dataToRender.put(new LevelPos(detailLevel, posX + regionPosX * size, posZ + regionPosZ * size), new MutableBoolean(true));
-				}
+				posToRender.addPosToRender(LevelPosUtil.createLevelPos(detailLevel,
+						posX + regionPosX * size,
+						posZ + regionPosZ * size));
 			}
 		}
 	}

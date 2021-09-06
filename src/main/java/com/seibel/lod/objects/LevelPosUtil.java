@@ -139,6 +139,23 @@ public class LevelPosUtil
 		return maxDistance;
 	}
 
+	public static int maxDistance(byte detailLevel, int posX, int posZ, int playerPosX, int playerPosZ, int xRegion, int zRegion)
+	{
+		int width = 1 << detailLevel;
+
+		int startPosX = xRegion * 512 + posX * width;
+		int startPosZ = zRegion * 512 + posZ * width;
+		int endPosX = startPosX + width;
+		int endPosZ = startPosZ + width;
+
+		int maxDistance = (int) Math.sqrt(Math.pow(playerPosX - startPosX, 2) + Math.pow(playerPosZ - startPosZ, 2));
+		maxDistance = Math.max(maxDistance, (int) Math.sqrt(Math.pow(playerPosX - startPosX, 2) + Math.pow(playerPosZ - endPosZ, 2)));
+		maxDistance = Math.max(maxDistance, (int) Math.sqrt(Math.pow(playerPosX - endPosX, 2) + Math.pow(playerPosZ - startPosZ, 2)));
+		maxDistance = Math.max(maxDistance, (int) Math.sqrt(Math.pow(playerPosX - endPosX, 2) + Math.pow(playerPosZ - endPosZ, 2)));
+
+		return maxDistance;
+	}
+
 
 	public static int minDistance(int[] levelPos, int playerPosX, int playerPosZ)
 	{
