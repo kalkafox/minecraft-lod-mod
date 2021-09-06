@@ -7,6 +7,8 @@ import java.util.Arrays;
 public class PosToRenderContainer
 {
 	private byte minDetail;
+	private int regionPosX;
+	private int regionPosZ;
 	private int numberOfPosToRender;
 	private int[][] posToRender;
 	/*TODO this population matrix could be converted to boolean to improve memory use*/
@@ -14,9 +16,15 @@ public class PosToRenderContainer
 
 	public PosToRenderContainer(byte minDetail)
 	{
+		this.numberOfPosToRender = 0;
+	}
+	public PosToRenderContainer(byte minDetail, int regionPosX, int regionPosZ)
+	{
 		this.minDetail = minDetail;
 		this.numberOfPosToRender = 0;
-		posToRender = new int[1][4];
+		this.regionPosX = regionPosX;
+		this.regionPosZ = regionPosZ;
+		posToRender = new int[1][3];
 		int size = 1 << (LodUtil.REGION_DETAIL_LEVEL - minDetail);
 		population = new byte[size][size];
 	}
@@ -28,13 +36,19 @@ public class PosToRenderContainer
 		posToRender[numberOfPosToRender] = levelPos;
 		numberOfPosToRender++;
 		int[] newLevelPos = LevelPosUtil.getRegionModule(LevelPosUtil.convert(levelPos, minDetail));
-		population[LevelPosUtil.getPosZ(newLevelPos)][LevelPosUtil.getPosZ(newLevelPos)] = (byte) (LevelPosUtil.getDetailLevel(levelPos) + 1);
+		population[LevelPosUtil.getPosX(newLevelPos)][LevelPosUtil.getPosZ(newLevelPos)] = (byte) (LevelPosUtil.getDetailLevel(levelPos) + 1);
 	}
 
 	public boolean contains(int[] levelPos)
 	{
-		int[] newLevelPos = LevelPosUtil.convert(LevelPosUtil.getRegionModule(levelPos), minDetail);
-		return (population[LevelPosUtil.getPosZ(newLevelPos)][LevelPosUtil.getPosZ(newLevelPos)] == (LevelPosUtil.getDetailLevel(levelPos) + 1));
+		if(LevelPosUtil.getRegionPosX(levelPos) == regionPosX && LevelPosUtil.getRegionPosZ(levelPos) == regionPosZ)
+		{
+			int[] newLevelPos = LevelPosUtil.convert(LevelPosUtil.getRegionModule(levelPos), minDetail);
+			return (population[LevelPosUtil.getPosX(newLevelPos)][LevelPosUtil.getPosZ(newLevelPos)] == (LevelPosUtil.getDetailLevel(levelPos) + 1));
+		}else
+		{
+			return false;
+		}
 	}
 
 	public int getNumberOfPos()

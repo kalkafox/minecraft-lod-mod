@@ -548,13 +548,12 @@ public class LodDimension
 			return region.getDataToRender(playerPosX, playerPosZ);
 		} catch (NullPointerException e)
 		{
-			System.out.println(regionPos);
 			e.printStackTrace();
-			return null;
+			return new PosToRenderContainer(LodUtil.REGION_DETAIL_LEVEL);
 		} catch (Exception e)
 		{
 			//e.printStackTrace();
-			return null;
+			return new PosToRenderContainer(LodUtil.REGION_DETAIL_LEVEL);
 		}
 	}
 

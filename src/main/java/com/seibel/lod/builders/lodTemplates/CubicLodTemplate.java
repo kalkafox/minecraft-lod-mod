@@ -41,22 +41,22 @@ import net.minecraft.util.math.BlockPos;
 public class CubicLodTemplate extends AbstractLodTemplate
 {
 	private final int CULL_OFFSET = 16;
-	
+
 	public CubicLodTemplate()
 	{
-		
+
 	}
-	
+
 	@Override
-	public void addLodToBuffer(BufferBuilder buffer, BlockPos playerBlockPos, short[] data, short[][][] adjData,
-			int[] levelPos, DebugMode debugging)
+	public void addLodToBuffer(BufferBuilder buffer, BlockPos playerBlockPos, short[] data, short[][] adjData,
+	                           int[] levelPos, DebugMode debugging)
 	{
 		AxisAlignedBB bbox;
 		byte detailLevel = LevelPosUtil.getDetailLevel(levelPos);
 		int posX = LevelPosUtil.getPosX(levelPos);
 		int posZ = LevelPosUtil.getPosZ(levelPos);
 		int width = 1 << detailLevel;
-		
+
 		// add each LOD for the detail level
 		bbox = generateBoundingBox(
 				DataPoint.getHeight(data),
@@ -65,37 +65,37 @@ public class CubicLodTemplate extends AbstractLodTemplate
 				posX * width,
 				0,
 				posZ * width);
-		
+
 		int color = DataPoint.getColor(data);
 		if (debugging != DebugMode.OFF)
 		{
 			color = LodUtil.DEBUG_DETAIL_LEVEL_COLORS[detailLevel].getRGB();
 		}
-		
+
 		if (bbox != null)
 		{
 			addBoundingBoxToBuffer(buffer, bbox, color, playerBlockPos, adjData);
 		}
-		
+
 	}
-	
+
 	private AxisAlignedBB generateBoundingBox(int height, int depth, int width, double xOffset, double yOffset, double zOffset)
 	{
 		// don't add an LOD if it is empty
 		if (height == -1 && depth == -1)
 			return null;
-		
+
 		if (depth == height)
 		{
 			// if the top and bottom points are at the same height
 			// render this LOD as 1 block thick
 			height++;
 		}
-		
+
 		return new AxisAlignedBB(0, depth, 0, width, height, width).move(xOffset, yOffset, zOffset);
 	}
-	
-	private void addBoundingBoxToBuffer(BufferBuilder buffer, AxisAlignedBB bb, int c, BlockPos playerBlockPos, short[][][] adjData)
+
+	private void addBoundingBoxToBuffer(BufferBuilder buffer, AxisAlignedBB bb, int c, BlockPos playerBlockPos, short[][] adjData)
 	{
 		int topColor = c;
 		int bottomColor = c;
@@ -103,7 +103,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 		int southColor = c;
 		int westColor = c;
 		int eastColor = c;
-		
+
 		// darken the bottom and side colors if requested
 		if (LodConfig.CLIENT.graphics.shadingMode.get() == ShadingMode.DARKEN_SIDES)
 		{
@@ -119,11 +119,11 @@ public class CubicLodTemplate extends AbstractLodTemplate
 			westColor = ColorUtil.applyShade(c, mc.level.getShade(Direction.WEST, true));
 			eastColor = ColorUtil.applyShade(c, mc.level.getShade(Direction.EAST, true));
 		}
-		
+
 		// apply the user specified saturation and brightness
 		float saturationMultiplier = LodConfig.CLIENT.graphics.saturationMultiplier.get().floatValue();
 		float brightnessMultiplier = LodConfig.CLIENT.graphics.brightnessMultiplier.get().floatValue();
-		
+
 		if (saturationMultiplier != 1 || brightnessMultiplier != 1)
 		{
 			topColor = ColorUtil.applySaturationAndBrightnessMultipliers(topColor, saturationMultiplier, brightnessMultiplier);
@@ -136,7 +136,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 		int minY;
 		int maxY;
 		short[] data;
-		
+
 		int red;
 		int green;
 		int blue;
@@ -167,83 +167,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 			addPosAndColor(buffer, bb.minX, bb.minY, bb.maxZ, red, green, blue, alpha);
 			addPosAndColor(buffer, bb.minX, bb.minY, bb.minZ, red, green, blue, alpha);
 		}
-		
-		if (playerBlockPos.getZ() > bb.minZ - CULL_OFFSET || disableCulling)
-		{
-			red = ColorUtil.getRed(northColor);
-			green = ColorUtil.getGreen(northColor);
-			blue = ColorUtil.getBlue(northColor);
-			alpha = ColorUtil.getAlpha(northColor);
-			// south (facing -Z)
-			data = adjData[1][1];
-			if (data == null)
-			{
-				addPosAndColor(buffer, bb.maxX, bb.minY, bb.maxZ, red, green, blue, alpha);
-				addPosAndColor(buffer, bb.maxX, bb.maxY, bb.maxZ, red, green, blue, alpha);
-				addPosAndColor(buffer, bb.minX, bb.maxY, bb.maxZ, red, green, blue, alpha);
-				addPosAndColor(buffer, bb.minX, bb.minY, bb.maxZ, red, green, blue, alpha);
-			}
-			else
-			{
-				maxY = DataPoint.getHeight(data);
-				if (maxY < bb.maxY)
-				{
-					minY = (int) Math.max(maxY, bb.minY);
-					addPosAndColor(buffer, bb.maxX, minY, bb.maxZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.maxX, bb.maxY, bb.maxZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.minX, bb.maxY, bb.maxZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.minX, minY, bb.maxZ, red, green, blue, alpha);
-				}
-				minY = DataPoint.getDepth(data);
-				if (minY > bb.minY)
-				{
-					maxY = (int) Math.min(minY, bb.maxY);
-					addPosAndColor(buffer, bb.maxX, bb.minY, bb.maxZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.maxX, maxY, bb.maxZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.minX, maxY, bb.maxZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.minX, bb.minY, bb.maxZ, red, green, blue, alpha);
-				}
-			}
-		}
-		
-		if (playerBlockPos.getZ() < bb.maxZ + CULL_OFFSET || disableCulling)
-		{
-			red = ColorUtil.getRed(southColor);
-			green = ColorUtil.getGreen(southColor);
-			blue = ColorUtil.getBlue(southColor);
-			alpha = ColorUtil.getAlpha(southColor);
-			data = adjData[1][0];
-			// north (facing +Z)
-			if (data == null)
-			{
-				addPosAndColor(buffer, bb.minX, bb.minY, bb.minZ, red, green, blue, alpha);
-				addPosAndColor(buffer, bb.minX, bb.maxY, bb.minZ, red, green, blue, alpha);
-				addPosAndColor(buffer, bb.maxX, bb.maxY, bb.minZ, red, green, blue, alpha);
-				addPosAndColor(buffer, bb.maxX, bb.minY, bb.minZ, red, green, blue, alpha);
-			}
-			else
-			{
-				maxY = DataPoint.getHeight(data);
-				if (maxY < bb.maxY)
-				{
-					minY = (int) Math.max(maxY, bb.minY);
-					addPosAndColor(buffer, bb.minX, minY, bb.minZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.minX, bb.maxY, bb.minZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.maxX, bb.maxY, bb.minZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.maxX, minY, bb.minZ, red, green, blue, alpha);
-				}
-				minY = DataPoint.getDepth(data);
-				if (minY > bb.minY)
-				{
-					maxY = (int) Math.min(minY, bb.maxY);
-					addPosAndColor(buffer, bb.minX, bb.minY, bb.minZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.minX, maxY, bb.minZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.maxX, maxY, bb.minZ, red, green, blue, alpha);
-					addPosAndColor(buffer, bb.maxX, bb.minY, bb.minZ, red, green, blue, alpha);
-				}
-			}
-		}
-		
+
 		if (playerBlockPos.getX() < bb.maxX + CULL_OFFSET || disableCulling)
 		{
 			red = ColorUtil.getRed(westColor);
@@ -251,7 +175,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 			blue = ColorUtil.getBlue(westColor);
 			alpha = ColorUtil.getAlpha(westColor);
 			// west (facing -X)
-			data = adjData[0][0];
+			data = adjData[0];
 			if (data == null)
 			{
 				addPosAndColor(buffer, bb.minX, bb.minY, bb.minZ, red, green, blue, alpha);
@@ -281,7 +205,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 				}
 			}
 		}
-		
+
 		if (playerBlockPos.getX() > bb.minX - CULL_OFFSET || disableCulling)
 		{
 			red = ColorUtil.getRed(eastColor);
@@ -289,7 +213,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 			blue = ColorUtil.getBlue(eastColor);
 			alpha = ColorUtil.getAlpha(eastColor);
 			// east (facing +X)
-			data = adjData[0][1];
+			data = adjData[1];
 			if (data == null)
 			{
 				addPosAndColor(buffer, bb.maxX, bb.maxY, bb.minZ, red, green, blue, alpha);
@@ -319,13 +243,89 @@ public class CubicLodTemplate extends AbstractLodTemplate
 				}
 			}
 		}
+
+		if (playerBlockPos.getZ() > bb.minZ - CULL_OFFSET || disableCulling)
+		{
+			red = ColorUtil.getRed(northColor);
+			green = ColorUtil.getGreen(northColor);
+			blue = ColorUtil.getBlue(northColor);
+			alpha = ColorUtil.getAlpha(northColor);
+			data = adjData[3];
+			// north (facing +Z)
+			if (data == null)
+			{
+				addPosAndColor(buffer, bb.maxX, bb.minY, bb.maxZ, red, green, blue, alpha);
+				addPosAndColor(buffer, bb.maxX, bb.maxY, bb.maxZ, red, green, blue, alpha);
+				addPosAndColor(buffer, bb.minX, bb.maxY, bb.maxZ, red, green, blue, alpha);
+				addPosAndColor(buffer, bb.minX, bb.minY, bb.maxZ, red, green, blue, alpha);
+			}
+			else
+			{
+				maxY = DataPoint.getHeight(data);
+				if (maxY < bb.maxY)
+				{
+					minY = (int) Math.max(maxY, bb.minY);
+					addPosAndColor(buffer, bb.maxX, minY, bb.maxZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.maxX, bb.maxY, bb.maxZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.minX, bb.maxY, bb.maxZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.minX, minY, bb.maxZ, red, green, blue, alpha);
+				}
+				minY = DataPoint.getDepth(data);
+				if (minY > bb.minY)
+				{
+					maxY = (int) Math.min(minY, bb.maxY);
+					addPosAndColor(buffer, bb.maxX, bb.minY, bb.maxZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.maxX, maxY, bb.maxZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.minX, maxY, bb.maxZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.minX, bb.minY, bb.maxZ, red, green, blue, alpha);
+				}
+			}
+		}
+
+		if (playerBlockPos.getZ() < bb.maxZ + CULL_OFFSET || disableCulling)
+		{
+			red = ColorUtil.getRed(southColor);
+			green = ColorUtil.getGreen(southColor);
+			blue = ColorUtil.getBlue(southColor);
+			alpha = ColorUtil.getAlpha(southColor);
+			data = adjData[2];
+			// south (facing -Z)
+			if (data == null)
+			{
+				addPosAndColor(buffer, bb.minX, bb.minY, bb.minZ, red, green, blue, alpha);
+				addPosAndColor(buffer, bb.minX, bb.maxY, bb.minZ, red, green, blue, alpha);
+				addPosAndColor(buffer, bb.maxX, bb.maxY, bb.minZ, red, green, blue, alpha);
+				addPosAndColor(buffer, bb.maxX, bb.minY, bb.minZ, red, green, blue, alpha);
+			}
+			else
+			{
+				maxY = DataPoint.getHeight(data);
+				if (maxY < bb.maxY)
+				{
+					minY = (int) Math.max(maxY, bb.minY);
+					addPosAndColor(buffer, bb.minX, minY, bb.minZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.minX, bb.maxY, bb.minZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.maxX, bb.maxY, bb.minZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.maxX, minY, bb.minZ, red, green, blue, alpha);
+				}
+				minY = DataPoint.getDepth(data);
+				if (minY > bb.minY)
+				{
+					maxY = (int) Math.min(minY, bb.maxY);
+					addPosAndColor(buffer, bb.minX, bb.minY, bb.minZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.minX, maxY, bb.minZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.maxX, maxY, bb.minZ, red, green, blue, alpha);
+					addPosAndColor(buffer, bb.maxX, bb.minY, bb.minZ, red, green, blue, alpha);
+				}
+			}
+		}
 	}
-	
+
 	@Override
 	public int getBufferMemoryForSingleNode()
 	{
 		// (sidesOnACube * pointsInASquare * (positionPoints + colorPoints)))
 		return (6 * 4 * (3 + 4));
 	}
-	
+
 }

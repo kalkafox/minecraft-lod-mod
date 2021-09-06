@@ -277,7 +277,7 @@ public class LodRegion
 	public PosToRenderContainer getDataToRender(int playerPosX, int playerPosZ)
 	{
 		int[] levelPos = LevelPosUtil.createLevelPos(LodUtil.REGION_DETAIL_LEVEL, 0, 0);
-		PosToRenderContainer posToRender = new PosToRenderContainer(minDetailLevel);
+		PosToRenderContainer posToRender = new PosToRenderContainer(minDetailLevel, regionPosX, regionPosZ);
 		getDataToRender(posToRender, levelPos, playerPosX, playerPosZ);
 		return posToRender;
 	}
