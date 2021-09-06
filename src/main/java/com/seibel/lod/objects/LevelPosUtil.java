@@ -37,11 +37,29 @@ public class LevelPosUtil
 		return new int[]{detailLevel, posX, posZ};
 	}
 
-	public static int[] createLevelPos(byte detailLevel, int posX, int posZ, int distance)
+	public static int convert(byte detailLevel, int pos, byte newDetailLevel)
 	{
-		return new int[]{detailLevel, posX, posZ, distance};
+		int width;
+		if (newDetailLevel >= detailLevel)
+		{
+			width = 1 << (newDetailLevel - detailLevel);
+			return Math.floorDiv(pos, width);
+		} else
+		{
+			width = 1 << (detailLevel - newDetailLevel);
+			return pos * width;
+		}
 	}
 
+	public static int getRegion(byte detailLevel, int pos)
+	{
+		return Math.floorDiv(pos, 1 << (LodUtil.REGION_DETAIL_LEVEL - detailLevel));
+	}
+
+	public static int getRegionModule(byte detailLevel, int pos)
+	{
+		return Math.floorMod(pos, 1 << (LodUtil.REGION_DETAIL_LEVEL - detailLevel));
+	}
 
 	public static byte getDetailLevel(int[] levelPos)
 	{
@@ -105,6 +123,11 @@ public class LevelPosUtil
 		return Math.floorDiv(getPosZ(levelPos), width);
 	}
 
+	public static int getChunkPos(byte detailLevel, int pos)
+	{
+		return convert(detailLevel,pos, LodUtil.CHUNK_DETAIL_LEVEL);
+	}
+
 	public static int getChunkPosX(int[] levelPos)
 	{
 		levelPos = convert(levelPos, LodUtil.CHUNK_DETAIL_LEVEL);
@@ -162,30 +185,6 @@ public class LevelPosUtil
 		return minDistance(getDetailLevel(levelPos), getPosX(levelPos), getPosZ(levelPos), playerPosX, playerPosZ);
 	}
 
-	public static int convert(byte detailLevel, int pos, byte newDetailLevel)
-	{
-		int width;
-		if (newDetailLevel >= detailLevel)
-		{
-			width = 1 << (newDetailLevel - detailLevel);
-			return Math.floorDiv(pos, width);
-		} else
-		{
-			width = 1 << (detailLevel - newDetailLevel);
-			return pos * width;
-		}
-	}
-
-	public static int getRegion(byte detailLevel, int pos)
-	{
-		return Math.floorDiv(pos, 1 << (LodUtil.REGION_DETAIL_LEVEL - detailLevel));
-	}
-
-	public static int getRegionModule(byte detailLevel, int pos)
-	{
-		return Math.floorMod(pos, 1 << (LodUtil.REGION_DETAIL_LEVEL - detailLevel));
-	}
-
 	public static int minDistance(byte detailLevel, int posX, int posZ, int playerPosX, int playerPosZ)
 	{
 		int width = 1 << detailLevel;
@@ -229,33 +228,22 @@ public class LevelPosUtil
 				minDistance(second, posX, posZ));
 	}
 
-	public static int compareDistance(int[] first, int[] second)
+	public static int compareDistance(int firstDistance, int secondDistance)
 	{
 		return Integer.compare(
-				getDistance(first),
-				getDistance(second));
+				firstDistance,
+				secondDistance);
 	}
 
-	public static int compareLevelAndDistance(int[] first, int[] second)
+
+	public static int compareLevelAndDistance(byte firstDetail, int firstDistance, byte secondDetail, int secondDistance)
 	{
-		int compareResult = Integer.compare(getDetailLevel(second), getDetailLevel(first));
+		int compareResult = Integer.compare(firstDetail, secondDetail);
 		if (compareResult == 0)
 		{
 			compareResult = Integer.compare(
-					getDistance(first),
-					getDistance(second));
-		}
-		return compareResult;
-	}
-
-	public static int compareLevelAndDistance(int posX, int posZ, int[] first, int[] second)
-	{
-		int compareResult = Integer.compare(getDetailLevel(second), getDetailLevel(first));
-		if (compareResult == 0)
-		{
-			compareResult = Integer.compare(
-					minDistance(first, posX, posZ),
-					minDistance(second, posX, posZ));
+					firstDistance,
+					secondDistance);
 		}
 		return compareResult;
 	}

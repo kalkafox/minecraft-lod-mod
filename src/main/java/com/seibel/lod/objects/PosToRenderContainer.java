@@ -1,9 +1,7 @@
 package com.seibel.lod.objects;
 
 import com.seibel.lod.util.LodUtil;
-
 import java.util.Arrays;
-import java.util.logging.Level;
 
 public class PosToRenderContainer
 {
@@ -25,33 +23,21 @@ public class PosToRenderContainer
 		this.numberOfPosToRender = 0;
 		this.regionPosX = regionPosX;
 		this.regionPosZ = regionPosZ;
-		posToRender = new int[1][3];
 		int size = 1 << (LodUtil.REGION_DETAIL_LEVEL - minDetail);
+		posToRender = new int[size*size][3];
 		population = new byte[size][size];
-	}
-
-	public void addPosToRender(int[] levelPos)
-	{
-		addPosToRender(LevelPosUtil.getDetailLevel(levelPos), LevelPosUtil.getPosX(levelPos), LevelPosUtil.getPosZ(levelPos));
 	}
 
 	public void addPosToRender(byte detailLevel, int posX, int posZ)
 	{
-		if(numberOfPosToRender >= posToRender.length)
-			posToRender = Arrays.copyOf(posToRender, posToRender.length*2);
+		//if(numberOfPosToRender >= posToRender.length)
+		//	posToRender = Arrays.copyOf(posToRender, posToRender.length*2);
 		posToRender[numberOfPosToRender][0] = detailLevel;
 		posToRender[numberOfPosToRender][1] = posX;
 		posToRender[numberOfPosToRender][2] = posZ;
 		numberOfPosToRender++;
 		population[LevelPosUtil.getRegionModule((byte) 0, LevelPosUtil.convert(detailLevel,posX,(byte) 0))]
 				[LevelPosUtil.getRegionModule((byte) 0, LevelPosUtil.convert(detailLevel,posZ,(byte) 0))] = (byte) (detailLevel + 1);
-	}
-
-	public boolean contains(int[] levelPos){
-		return contains(
-				LevelPosUtil.getDetailLevel(levelPos),
-				LevelPosUtil.getPosX(levelPos),
-				LevelPosUtil.getPosZ(levelPos));
 	}
 
 	public boolean contains(byte detailLevel, int posX, int posZ)
@@ -64,6 +50,10 @@ public class PosToRenderContainer
 		{
 			return false;
 		}
+	}
+	public void clear(){
+		posToRender = new int[0][0];
+		population = new byte[0][0];
 	}
 
 	public int getNumberOfPos()

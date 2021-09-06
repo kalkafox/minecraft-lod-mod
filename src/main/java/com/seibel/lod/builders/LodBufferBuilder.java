@@ -194,62 +194,60 @@ public class LodBufferBuilder
 										playerBlockPosRounded.getX(),
 										playerBlockPosRounded.getZ());
 
+								byte detailLevel;
 								int posX;
 								int posZ;
 								int xAdj;
 								int zAdj;
-								byte detailLevel;
 								int chunkXdist;
 								int chunkZdist;
 								short gameChunkRenderDistance = (short) (renderer.vanillaRenderedChunks.length / 2 - 1);
 								int[] levelPos;
-								int[] adjLevelPos;
 								short[] lodData;
 								short[][] adjData;
 								for (int index = 0; index < posToRender.getNumberOfPos(); index++)
 								{
 									levelPos = posToRender.getNthPos(index);
+									detailLevel = LevelPosUtil.getDetailLevel(levelPos);
+									posX = LevelPosUtil.getPosX(levelPos);
+									posZ = LevelPosUtil.getPosZ(levelPos);
 									// skip any chunks that Minecraft is going to render
 									chunkXdist = LevelPosUtil.getChunkPosX(levelPos) - playerChunkPos.x;
 									chunkZdist = LevelPosUtil.getChunkPosZ(levelPos) - playerChunkPos.z;
 									if (gameChunkRenderDistance >= Math.abs(chunkXdist)
 											    && gameChunkRenderDistance >= Math.abs(chunkZdist)
-											    && LevelPosUtil.getDetailLevel(levelPos) <= LodUtil.CHUNK_DETAIL_LEVEL
+											    && detailLevel <= LodUtil.CHUNK_DETAIL_LEVEL
 											    && renderer.vanillaRenderedChunks[chunkXdist + gameChunkRenderDistance + 1][chunkZdist + gameChunkRenderDistance + 1])
 									{
 										continue;
 									}
-									detailLevel = LevelPosUtil.getDetailLevel(levelPos);
-									posX = LevelPosUtil.getPosX(levelPos);
-									posZ = LevelPosUtil.getPosZ(levelPos);
 									// skip any chunks that Minecraft is going to render
 									try
 									{
 										boolean disableFix = false;
-										if (lodDim.doesDataExist(levelPos))
+										if (lodDim.doesDataExist(detailLevel, posX, posZ))
 										{
-											lodData = lodDim.getData(levelPos);
+											lodData = lodDim.getData(detailLevel, posX, posZ);
 											adjData = new short[NUMBER_OF_DIRECTION][];
 											for (int direction = 0; direction < NUMBER_OF_DIRECTION; direction++)
 											{
-												xAdj = ADJ_DIRECTION[direction][0];
-												zAdj = ADJ_DIRECTION[direction][1];
-												adjLevelPos = LevelPosUtil.createLevelPos(detailLevel, posX + xAdj, posZ + zAdj);
-												chunkXdist = LevelPosUtil.getChunkPosX(adjLevelPos) - playerChunkPos.x;
-												chunkZdist = LevelPosUtil.getChunkPosZ(adjLevelPos) - playerChunkPos.z;
+												xAdj = posX + ADJ_DIRECTION[direction][0];
+												zAdj = posZ + ADJ_DIRECTION[direction][1];
+												chunkXdist = LevelPosUtil.getChunkPos(detailLevel,xAdj) - playerChunkPos.x;
+												chunkZdist = LevelPosUtil.getChunkPos(detailLevel,xAdj) - playerChunkPos.z;
 
 												if (gameChunkRenderDistance >= Math.abs(chunkXdist) && gameChunkRenderDistance >= Math.abs(chunkZdist))
 												{
 													if (!renderer.vanillaRenderedChunks[chunkXdist + gameChunkRenderDistance + 1][chunkZdist + gameChunkRenderDistance + 1]
-															    && (posToRender.contains(adjLevelPos) || disableFix))
+															    && (posToRender.contains(detailLevel, xAdj, zAdj) || disableFix))
 													{
-														adjData[direction]= lodDim.getData(adjLevelPos);
+														adjData[direction]= lodDim.getData(detailLevel, xAdj, zAdj);
 													}
 												} else
 												{
-													if (posToRender.contains(adjLevelPos) || disableFix)
+													if (posToRender.contains(detailLevel, xAdj, zAdj) || disableFix)
 													{
-														adjData[direction] = lodDim.getData(adjLevelPos);
+														adjData[direction] = lodDim.getData(detailLevel, xAdj, zAdj);
 													}
 												}
 											}
@@ -260,11 +258,12 @@ public class LodBufferBuilder
 									} catch (ArrayIndexOutOfBoundsException e)
 									{
 										e.printStackTrace();
+										posToRender.clear();
 										return false;
 									}
 
 								}// for pos to in list to render
-
+								posToRender.clear();
 								// the thread executed successfully
 								return true;
 							};

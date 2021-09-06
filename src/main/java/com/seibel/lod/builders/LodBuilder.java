@@ -169,6 +169,9 @@ public class LodBuilder
 		int startZ;
 		int endX;
 		int endZ;
+		byte detailLevel;
+		int posX;
+		int posZ;
 		short[] color;
 		short height;
 		short depth;
@@ -176,10 +179,9 @@ public class LodBuilder
 		int[] levelPos;
 		try
 		{
-			levelPos = LevelPosUtil.createLevelPos(LodUtil.CHUNK_DETAIL_LEVEL,
+			byte minDetailLevel = lodDim.getRegion(LodUtil.CHUNK_DETAIL_LEVEL,
 					chunk.getPos().x,
-					chunk.getPos().z);
-			byte minDetailLevel = lodDim.getRegion(levelPos).getMinDetailLevel();
+					chunk.getPos().z).getMinDetailLevel();
 			LodDetail detail = DetailDistanceUtil.getLodGenDetail(minDetailLevel);
 			for (int i = 0; i < detail.dataPointLengthCount * detail.dataPointLengthCount; i++)
 			{
@@ -200,22 +202,23 @@ public class LodBuilder
 							startZ, endX, endZ);
 					depth = 0;
 				}
-				levelPos = LevelPosUtil.createLevelPos((byte) 0,
-						chunk.getPos().x * 16 + startX,
-						chunk.getPos().z * 16 + startZ);
+				detailLevel = detail.detailLevel;
+				posX = LevelPosUtil.convert((byte) 0, chunk.getPos().x * 16 + startX, (byte) detailLevel);
+				posZ = LevelPosUtil.convert((byte) 0, chunk.getPos().z * 16 + startZ, (byte) detailLevel);
 
-				levelPos = LevelPosUtil.convert(levelPos,detail.detailLevel);
 				boolean isServer = config.distanceGenerationMode == DistanceGenerationMode.SERVER;
+
 				data = DataPoint.createDataPoint(height, depth, color[0], color[1], color[2]);
-				lodDim.addData(levelPos,
+				lodDim.addData(detailLevel,
+						posX,
+						posZ,
 						data,
 						false,
 						isServer);
 			}
-			levelPos = LevelPosUtil.createLevelPos(LodUtil.CHUNK_DETAIL_LEVEL,
+			lodDim.updateData(LodUtil.CHUNK_DETAIL_LEVEL,
 					chunk.getPos().x,
 					chunk.getPos().z);
-			lodDim.updateData(levelPos);
 		} catch (Exception e)
 		{
 			//e.printStackTrace();

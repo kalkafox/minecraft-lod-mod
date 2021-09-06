@@ -324,11 +324,10 @@ public class LodUtil
 			{
 				for (int z = centerChunk.z - chunkRenderDist; z < centerChunk.z + chunkRenderDist; z++)
 				{
-					int[] levelPos = LevelPosUtil.createLevelPos(LodUtil.CHUNK_DETAIL_LEVEL, x, z);
-					if (!lodDim.doesDataExist(levelPos))
+					if (!lodDim.doesDataExist(LodUtil.CHUNK_DETAIL_LEVEL, x, z))
 						continue;
 					
-					short[] data = lodDim.getData(levelPos);
+					short[] data = lodDim.getData(LodUtil.CHUNK_DETAIL_LEVEL, x, z);
 					
 					short lodAverageHeight = data[0];
 					if (playerPos.getY() <= lodAverageHeight)
