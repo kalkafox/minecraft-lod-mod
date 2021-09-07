@@ -191,21 +191,24 @@ public class LodBufferBuilder
 							// local position in the vbo and bufferBuilder arrays
 							BufferBuilder currentBuffer = buildableBuffers[xRegion][zRegion];
 							byte minDetail = lodDim.getRegion(regionPos.x, regionPos.z).getMinDetailLevel();
-							//previous setToRender chache
-							if (setsToRender[xRegion][zRegion] == null)
-							{
-								setsToRender[xRegion][zRegion] = new PosToRenderContainer(minDetail, regionPos.x, regionPos.z);
-							}
 							// make sure the buffers weren't
 							// changed while we were running this method
 							if (currentBuffer == null || (currentBuffer != null && !currentBuffer.building()))
 								return;
 							//previous setToRender chache
-
-							PosToRenderContainer posToRender = (PosToRenderContainer) setsToRender[xRegion][zRegion];
-							posToRender.clear(minDetail, regionPos.x, regionPos.z);
+							final int xR = xRegion;
+							final int zR = zRegion;
 							Callable<Boolean> dataToRenderThread = () ->
 							{
+
+								//previous setToRender chache
+								if (setsToRender[xR][zR] == null)
+								{
+									setsToRender[xR][zR] = new PosToRenderContainer(minDetail, regionPos.x, regionPos.z);
+								}
+								PosToRenderContainer posToRender = (PosToRenderContainer) setsToRender[xR][zR];
+								posToRender.clear(minDetail, regionPos.x, regionPos.z);
+
 								lodDim.getDataToRender(
 										posToRender,
 										regionPos,
