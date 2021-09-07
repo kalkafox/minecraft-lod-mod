@@ -221,13 +221,6 @@ public class LevelPosUtil
 		}
 	}
 
-	public static int compareDistance(int posX, int posZ, int[] first, int[] second)
-	{
-		return Integer.compare(
-				minDistance(first, posX, posZ),
-				minDistance(second, posX, posZ));
-	}
-
 	public static int compareDistance(int firstDistance, int secondDistance)
 	{
 		return Integer.compare(
@@ -238,7 +231,9 @@ public class LevelPosUtil
 
 	public static int compareLevelAndDistance(byte firstDetail, int firstDistance, byte secondDetail, int secondDistance)
 	{
-		int compareResult = Integer.compare(firstDetail, secondDetail);
+		int compareResult = Integer.compare(
+				secondDetail,
+				firstDetail);
 		if (compareResult == 0)
 		{
 			compareResult = Integer.compare(

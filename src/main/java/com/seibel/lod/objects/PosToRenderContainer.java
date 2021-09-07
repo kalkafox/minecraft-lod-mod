@@ -36,16 +36,16 @@ public class PosToRenderContainer
 		posToRender[numberOfPosToRender][1] = posX;
 		posToRender[numberOfPosToRender][2] = posZ;
 		numberOfPosToRender++;
-		population[LevelPosUtil.getRegionModule((byte) 0, LevelPosUtil.convert(detailLevel,posX,(byte) 0))]
-				[LevelPosUtil.getRegionModule((byte) 0, LevelPosUtil.convert(detailLevel,posZ,(byte) 0))] = (byte) (detailLevel + 1);
+		population[LevelPosUtil.getRegionModule(minDetail, LevelPosUtil.convert(detailLevel,posX,minDetail))]
+				[LevelPosUtil.getRegionModule(minDetail, LevelPosUtil.convert(detailLevel,posZ,minDetail))] = (byte) (detailLevel + 1);
 	}
 
 	public boolean contains(byte detailLevel, int posX, int posZ)
 	{
 		if(LevelPosUtil.getRegion(detailLevel, posX) == regionPosX && LevelPosUtil.getRegion(detailLevel, posZ) == regionPosZ)
 		{
-			return (population[LevelPosUtil.getRegionModule((byte) 0, LevelPosUtil.convert(detailLevel,posX,(byte) 0))]
-					        [LevelPosUtil.getRegionModule((byte) 0, LevelPosUtil.convert(detailLevel,posZ,(byte) 0))] == (detailLevel + 1));
+			return (population[LevelPosUtil.getRegionModule(minDetail, LevelPosUtil.convert(detailLevel,posX,minDetail))]
+					        [LevelPosUtil.getRegionModule(minDetail, LevelPosUtil.convert(detailLevel,posZ,minDetail))] == (detailLevel + 1));
 		}else
 		{
 			return false;

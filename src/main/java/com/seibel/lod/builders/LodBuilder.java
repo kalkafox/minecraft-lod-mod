@@ -20,6 +20,7 @@ package com.seibel.lod.builders;
 import java.awt.Color;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 
 import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.enums.LodDetail;
@@ -32,6 +33,7 @@ import com.seibel.lod.util.DetailDistanceUtil;
 import com.seibel.lod.util.LodThreadFactory;
 import com.seibel.lod.util.LodUtil;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import net.minecraft.block.AbstractPlantBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -161,7 +163,6 @@ public class LodBuilder
 	public void generateLodNodeFromChunk(LodDimension lodDim, IChunk chunk, LodBuilderConfig config)
 			throws IllegalArgumentException
 	{
-
 		if (chunk == null)
 			throw new IllegalArgumentException("generateLodFromChunk given a null chunk");
 
@@ -169,20 +170,23 @@ public class LodBuilder
 		int startZ;
 		int endX;
 		int endZ;
-		byte detailLevel;
-		int posX;
-		int posZ;
 		short[] color;
 		short height;
 		short depth;
 		short[] data;
-		int[] levelPos;
 		try
 		{
-			byte minDetailLevel = lodDim.getRegion(LodUtil.CHUNK_DETAIL_LEVEL,
-					chunk.getPos().x,
-					chunk.getPos().z).getMinDetailLevel();
-			LodDetail detail = DetailDistanceUtil.getLodGenDetail(minDetailLevel);
+			LodDetail detail = null;
+			try
+			{
+				byte minDetailLevel = lodDim.getRegion(chunk.getPos().getRegionX(), chunk.getPos().getRegionZ()).getMinDetailLevel();
+				detail = DetailDistanceUtil.getLodGenDetail(minDetailLevel);
+			}catch (Exception e){
+				detail = DetailDistanceUtil.getLodGenDetail(LodUtil.CHUNK_DETAIL_LEVEL);
+			}
+			byte detailLevel = detail.detailLevel;
+			int posX;
+			int posZ;
 			for (int i = 0; i < detail.dataPointLengthCount * detail.dataPointLengthCount; i++)
 			{
 				startX = detail.startX[i];
@@ -202,12 +206,9 @@ public class LodBuilder
 							startZ, endX, endZ);
 					depth = 0;
 				}
-				detailLevel = detail.detailLevel;
-				posX = LevelPosUtil.convert((byte) 0, chunk.getPos().x * 16 + startX, (byte) detailLevel);
-				posZ = LevelPosUtil.convert((byte) 0, chunk.getPos().z * 16 + startZ, (byte) detailLevel);
-
+				posX = LevelPosUtil.convert((byte) 0, chunk.getPos().x * 16 + startX, detail.detailLevel);
+				posZ = LevelPosUtil.convert((byte) 0, chunk.getPos().z * 16 + startZ, detail.detailLevel);
 				boolean isServer = config.distanceGenerationMode == DistanceGenerationMode.SERVER;
-
 				data = DataPoint.createDataPoint(height, depth, color[0], color[1], color[2]);
 				lodDim.addData(detailLevel,
 						posX,
@@ -216,13 +217,12 @@ public class LodBuilder
 						false,
 						isServer);
 			}
-			lodDim.updateData(LodUtil.CHUNK_DETAIL_LEVEL,
-					chunk.getPos().x,
-					chunk.getPos().z);
+			lodDim.updateData(LodUtil.CHUNK_DETAIL_LEVEL, chunk.getPos().x, chunk.getPos().z);
 		} catch (Exception e)
 		{
-			//e.printStackTrace();
+			e.printStackTrace();
 		}
+
 	}
 
 

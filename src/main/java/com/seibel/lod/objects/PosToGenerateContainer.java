@@ -1,7 +1,5 @@
 package com.seibel.lod.objects;
 
-import org.lwjgl.system.CallbackI;
-
 public class PosToGenerateContainer
 {
 	private int playerPosX;
@@ -45,12 +43,15 @@ public class PosToGenerateContainer
 			index = posToGenerate.length - farSize;
 			while (index < posToGenerate.length - 1 && LevelPosUtil.compareLevelAndDistance(detailLevel, distance, (byte) posToGenerate[index + 1][0], posToGenerate[index + 1][3]) <= 0)
 			{
-				posToGenerate[index] = posToGenerate[index + 1];
+				posToGenerate[index][0] = posToGenerate[index + 1][0];
+				posToGenerate[index][1] = posToGenerate[index + 1][1];
+				posToGenerate[index][2] = posToGenerate[index + 1][2];
+				posToGenerate[index][3] = posToGenerate[index + 1][3];
 				index++;
 			}
 			if (index <= posToGenerate.length - 1)
 			{
-				posToGenerate[index][0] = detailLevel;
+				posToGenerate[index][0] = detailLevel + 1;
 				posToGenerate[index][1] = posX;
 				posToGenerate[index][2] = posZ;
 				posToGenerate[index][3] = distance;
@@ -63,12 +64,15 @@ public class PosToGenerateContainer
 
 			while (index > 0 && LevelPosUtil.compareDistance(distance, posToGenerate[index - 1][3]) <= 0)
 			{
-				posToGenerate[index] = posToGenerate[index - 1];
+				posToGenerate[index][0] = posToGenerate[index - 1][0];
+				posToGenerate[index][1] = posToGenerate[index - 1][1];
+				posToGenerate[index][2] = posToGenerate[index - 1][2];
+				posToGenerate[index][3] = posToGenerate[index - 1][3];
 				index--;
 			}
 			if (index >= 0)
 			{
-				posToGenerate[index][0] = detailLevel;
+				posToGenerate[index][0] = detailLevel + 1;
 				posToGenerate[index][1] = posX;
 				posToGenerate[index][2] = posZ;
 				posToGenerate[index][3] = distance;
@@ -84,14 +88,18 @@ public class PosToGenerateContainer
 
 	public int[] getNthPos(int n)
 	{
-		int index;
+		if(n < farSize)
+			return posToGenerate[maxSize - n - 1];
+		else
+			return posToGenerate[n - farSize];
+		/*int index;
 		if (n > farSize * 2)
 			index = n - farSize;
 		else if (n % 2 == 0)
 			index = n / 2;
 		else
 			index = posToGenerate.length - n / 2 - 1;
-		return posToGenerate[index];
+		return posToGenerate[index];*/
 	}
 
 	public String toString()

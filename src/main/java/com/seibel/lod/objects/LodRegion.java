@@ -107,7 +107,7 @@ public class LodRegion
 	{
 		posX = LevelPosUtil.getRegionModule(detailLevel, posX);
 		posZ = LevelPosUtil.getRegionModule(detailLevel, posZ);
-		if (!doesDataExist(detailLevel,regionPosX,regionPosZ) || serverQuality)
+		if (!doesDataExist(detailLevel, posX, posZ) || serverQuality)
 		{
 
 			//update the number of node present
@@ -161,8 +161,8 @@ public class LodRegion
 
 		//here i calculate the the LevelPos is in range
 		//This is important to avoid any kind of hole in the generation
-		int minDistance = LevelPosUtil.minDistance(detailLevel, posX + regionPosX*size, posZ + regionPosZ*size, playerPosX, playerPosZ);
-
+		//nt minDistance = LevelPosUtil.minDistance(detailLevel, posX + regionPosX * size, posZ + regionPosZ * size, playerPosX, playerPosZ);
+		int maxDistance = LevelPosUtil.maxDistance(detailLevel, posX, posZ, playerPosX, playerPosZ, regionPosX, regionPosZ);
 
 		byte childDetailLevel = (byte) (detailLevel - 1);
 		int childPosX = posX * 2;
@@ -171,10 +171,10 @@ public class LodRegion
 		int childSize = 1 << (LodUtil.REGION_DETAIL_LEVEL - childDetailLevel);
 		//we have reached the target detail level
 
-		if (DetailDistanceUtil.getDistanceGenerationInverse(minDistance) > detailLevel)
+		if (DetailDistanceUtil.getDistanceGenerationInverse(maxDistance) > detailLevel)
 		{
 			return;
-		} else if (DetailDistanceUtil.getDistanceGenerationInverse(minDistance) == detailLevel)
+		} else if (DetailDistanceUtil.getDistanceGenerationInverse(maxDistance) == detailLevel)
 		{
 			if (!doesDataExist(detailLevel, posX, posZ))
 			{
@@ -191,10 +191,11 @@ public class LodRegion
 				{
 					for (int z = 0; z <= 1; z++)
 					{
+
 						if (!doesDataExist(childDetailLevel, childPosX + x, childPosZ + z))
 						{
 							num++;
-							posToGenerate.addPosToGenerate((byte) (detailLevel - 1), childPosX + x + regionPosX * childSize, childPosZ + z + regionPosZ * childSize);
+							posToGenerate.addPosToGenerate(childDetailLevel, childPosX + x + regionPosX * childSize, childPosZ + z + regionPosZ * childSize);
 						}
 					}
 				}
@@ -215,11 +216,9 @@ public class LodRegion
 			{
 				if (DetailDistanceUtil.getLodGenDetail(childDetailLevel).detailLevel <= (childDetailLevel))
 				{
-					childPosX = LevelPosUtil.convert(detailLevel, posX, childDetailLevel);
-					childPosZ = LevelPosUtil.convert(detailLevel, posZ, childDetailLevel);
 					if (!doesDataExist(childDetailLevel, childPosX, childPosZ))
 					{
-						posToGenerate.addPosToGenerate(childDetailLevel, childPosX, childPosZ);
+						posToGenerate.addPosToGenerate(childDetailLevel, childPosX + regionPosX * childSize, childPosZ + regionPosZ * childSize);
 					} else
 					{
 						getDataToGenerate(posToGenerate, childDetailLevel, childPosX, childPosZ, playerPosX, playerPosZ);
@@ -263,12 +262,13 @@ public class LodRegion
 		{
 			int childPosX = posX * 2;
 			int childPosZ = posZ * 2;
+			byte childDetailLevel = (byte) (detailLevel - 1);
 			int childrenCount = 0;
 			for (int x = 0; x <= 1; x++)
 			{
 				for (int z = 0; z <= 1; z++)
 				{
-					if (doesDataExist((byte) (detailLevel - 1), childPosX + x, childPosZ + z)) childrenCount++;
+					if (doesDataExist(childDetailLevel, childPosX + x, childPosZ + z)) childrenCount++;
 				}
 			}
 
@@ -279,7 +279,7 @@ public class LodRegion
 				{
 					for (int z = 0; z <= 1; z++)
 					{
-						getDataToRender(posToRender, (byte) (detailLevel - 1), childPosX + x, childPosZ + z, playerPosX, playerPosZ);
+						getDataToRender(posToRender, childDetailLevel, childPosX + x, childPosZ + z, playerPosX, playerPosZ);
 					}
 				}
 			} else
@@ -292,8 +292,10 @@ public class LodRegion
 	}
 
 
-	public void updateArea(byte detailLevel, int posX, int posZ)
+	/*public void updateArea(byte detailLevel, int posX, int posZ)
 	{
+		posX = LevelPosUtil.getRegionModule(detailLevel, posX);
+		posZ = LevelPosUtil.getRegionModule(detailLevel, posZ);
 		int width;
 		int startX;
 		int startZ;
@@ -329,8 +331,6 @@ public class LodRegion
 		int childPosX;
 		int childPosZ;
 		byte childDetailLevel;
-		posX = LevelPosUtil.getRegionModule(detailLevel, posX);
-		posZ = LevelPosUtil.getRegionModule(detailLevel, posZ);
 		for (int x = 0; x <= 1; x++)
 		{
 			for (int z = 0; z <= 1; z++)
@@ -379,7 +379,103 @@ public class LodRegion
 
 			dataExistence[detailLevel][posX][posZ] = true;
 		}
+	}*/
+
+	/**
+	 */
+	public void updateArea(byte detailLevel, int posX, int posZ)
+	{
+		int width;
+		int startX;
+		int startZ;
+		for (byte bottom = (byte) (minDetailLevel + 1); bottom <= detailLevel; bottom++)
+		{
+			startX = LevelPosUtil.convert(detailLevel, posX, bottom);
+			startZ = LevelPosUtil.convert(detailLevel, posZ, bottom);
+			width = 1 << (detailLevel - bottom);
+			for (int x = 0; x < width; x++)
+			{
+				for (int z = 0; z < width; z++)
+				{
+					update(bottom, startX + x, startZ + z);
+				}
+			}
+		}
+		for (byte up = (byte) (detailLevel + 1); up <= LodUtil.REGION_DETAIL_LEVEL; up++)
+		{
+			update(up,
+					LevelPosUtil.convert(detailLevel, posX, up),
+					LevelPosUtil.convert(detailLevel, posZ, up));
+		}
 	}
+
+	/**
+	 */
+	private void update(byte detailLevel, int posX, int posZ)
+	{
+		int numberOfChildren = 0;
+		int numberOfVoidChildren = 0;
+
+		int tempRed = 0;
+		int tempGreen = 0;
+		int tempBlue = 0;
+		int tempHeight = 0;
+		int tempDepth = 0;
+		int childPosX;
+		int childPosZ;
+		byte childDetailLevel;
+		posX = LevelPosUtil.getRegionModule(detailLevel, posX);
+		posZ = LevelPosUtil.getRegionModule(detailLevel, posZ);
+		for (int x = 0; x <= 1; x++)
+		{
+			for (int z = 0; z <= 1; z++)
+			{
+				childPosX = 2 * posX + x;
+				childPosZ = 2 * posZ + z;
+				childDetailLevel = (byte) (detailLevel - 1);
+				if (doesDataExist(childDetailLevel, childPosX, childPosZ))
+				{
+					if (height[childDetailLevel][childPosX][childPosZ] != LodBuilder.DEFAULT_HEIGHT
+							    && depth[childDetailLevel][childPosX][childPosZ] != LodBuilder.DEFAULT_DEPTH)
+					{
+						numberOfChildren++;
+
+						tempRed += colors[childDetailLevel][childPosX][childPosZ][0];
+						tempGreen += colors[childDetailLevel][childPosX][childPosZ][1];
+						tempBlue += colors[childDetailLevel][childPosX][childPosZ][2];
+						tempHeight += height[childDetailLevel][childPosX][childPosZ];
+						tempDepth += depth[childDetailLevel][childPosX][childPosZ];
+					} else
+					{
+						// void children have the default height (most likely -1)
+						// and represent a LOD with no blocks in it
+						numberOfVoidChildren++;
+					}
+				}
+			}
+		}
+
+		if (numberOfChildren > 0)
+		{
+			colors[detailLevel][posX][posZ][0] = (byte) (tempRed / numberOfChildren);
+			colors[detailLevel][posX][posZ][1] = (byte) (tempGreen / numberOfChildren);
+			colors[detailLevel][posX][posZ][2] = (byte) (tempBlue / numberOfChildren);
+			height[detailLevel][posX][posZ] = (short) (tempHeight / numberOfChildren);
+			depth[detailLevel][posX][posZ] = (short) (tempDepth / numberOfChildren);
+			dataExistence[detailLevel][posX][posZ] = true;
+		} else if (numberOfVoidChildren > 0)
+		{
+			colors[detailLevel][posX][posZ][0] = (byte) 0;
+			colors[detailLevel][posX][posZ][1] = (byte) 0;
+			colors[detailLevel][posX][posZ][2] = (byte) 0;
+
+			height[detailLevel][posX][posZ] = LodBuilder.DEFAULT_HEIGHT;
+			depth[detailLevel][posX][posZ] = LodBuilder.DEFAULT_DEPTH;
+
+			dataExistence[detailLevel][posX][posZ] = true;
+		}
+	}
+
 
 	/**
 	 * @return
@@ -390,7 +486,7 @@ public class LodRegion
 		posZ = LevelPosUtil.getRegionModule(detailLevel, posZ);
 		try
 		{
-				return dataExistence[detailLevel][posX][posZ];
+			return dataExistence[detailLevel][posX][posZ];
 		} catch (NullPointerException e)
 		{
 			return false;

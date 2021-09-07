@@ -99,12 +99,9 @@ public class LodWorldGenerator
 				try
 				{
 					// round the player's block position down to the nearest chunk BlockPos
-					ChunkPos playerChunkPos = new ChunkPos(mc.player.blockPosition());
-					BlockPos playerBlockPosRounded = playerChunkPos.getWorldPosition();
+					int playerPosX = (int) mc.player.position().x;
+					int playerPosZ = (int) mc.player.position().z;
 
-					// used when determining which chunks are closer when queuing distance
-					// generation
-					int minChunkDist = Integer.MAX_VALUE;
 
 					ArrayList<GenerationRequest> chunksToGen = new ArrayList<>(maxChunkGenRequests);
 					// if we don't have a full number of chunks to generate in chunksToGen
@@ -116,40 +113,33 @@ public class LodWorldGenerator
 					//=======================================//
 					List<GenerationRequest> generationRequestList = new ArrayList<>(maxChunkGenRequests);
 
+					ServerWorld serverWorld = LodUtil.getServerWorldFromDimension(lodDim.dimension);
+
 					byte farDetail = (byte) 7;
 					PosToGenerateContainer posToGenerate = lodDim.getDataToGenerate(
 							farDetail,
 							maxChunkGenRequests,
 							0.25,
-							playerBlockPosRounded.getX(),
-							playerBlockPosRounded.getZ());
-
-
+							playerPosX,
+							playerPosZ);
+					//System.out.println(posToGenerate);
 					//here we prepare two sorted set
 					//the first contains the near pos to render
 					//the second contain the far pos to render
+					byte detailLevel;
+					int posX;
+					int posZ;
 					int[] levelPos;
 					for (int index = 0; index < posToGenerate.getNumberOfPos(); index++)
 					{
 						levelPos = posToGenerate.getNthPos(index);
-						generationRequestList.add(
-								new GenerationRequest(
-										levelPos,
-										DetailDistanceUtil.getDistanceGenerationMode(LevelPosUtil.getDetailLevel(levelPos))
-								)
-						);
-					}
+						if(levelPos[0] == 0)
+							continue;
+						detailLevel = (byte) (levelPos[0] -1);
+						posX = levelPos[1];
+						posZ = levelPos[2];
 
-
-					//====================================//
-					// get the closet generation requests //
-					//====================================//
-
-					// determine which points in the posListToGenerate
-					// should actually be queued to generate
-					for (GenerationRequest generationRequest : generationRequestList)
-					{
-						ChunkPos chunkPos = generationRequest.getChunkPos();
+						ChunkPos chunkPos = new ChunkPos(LevelPosUtil.getChunkPos(detailLevel,posX), LevelPosUtil.getChunkPos(detailLevel,posZ));
 						if (numberOfChunksWaitingToGenerate.get() < maxChunkGenRequests)
 						{
 							// prevent generating the same chunk multiple times
@@ -157,32 +147,16 @@ public class LodWorldGenerator
 							{
 								continue;
 							}
-							chunksToGen.add(generationRequest);
+						}
 
-						} // lod null and can generate more chunks
-					} // positions to generate
-
-
-					//=============================//
-					// start the LodNodeGenWorkers //
-					//=============================//
-
-					// issue #19
-					// TODO add a way for a server side mod to generate chunks requested here
-					ServerWorld serverWorld = LodUtil.getServerWorldFromDimension(lodDim.dimension);
-
-					// start chunk generation
-					for (GenerationRequest generationRequest : generationRequestList)
-					{
 						// don't add null chunkPos (which shouldn't happen anyway)
 						// or add more to the generation queue
-						ChunkPos chunkPos = generationRequest.getChunkPos();
 						if (chunkPos == null || numberOfChunksWaitingToGenerate.get() >= maxChunkGenRequests)
 							continue;
 
 						positionWaitingToBeGenerated.add(chunkPos);
 						numberOfChunksWaitingToGenerate.addAndGet(1);
-						LodNodeGenWorker genWorker = new LodNodeGenWorker(chunkPos, generationRequest.generationMode, renderer, lodBuilder, lodDim, serverWorld);
+						LodNodeGenWorker genWorker = new LodNodeGenWorker(chunkPos,  DetailDistanceUtil.getDistanceGenerationMode(detailLevel), renderer, lodBuilder, lodDim, serverWorld);
 						WorldWorkerManager.addWorker(genWorker);
 					}
 
