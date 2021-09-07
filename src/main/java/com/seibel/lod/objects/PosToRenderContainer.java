@@ -98,6 +98,9 @@ public class PosToRenderContainer
 	{
 
 		StringBuilder builder = new StringBuilder();
+		builder.append("To render ");
+		builder.append(numberOfPosToRender);
+		builder.append('\n');
 		for(int i = 0; i < numberOfPosToRender; i++)
 		{
 			builder.append(posToRender[i][0]);

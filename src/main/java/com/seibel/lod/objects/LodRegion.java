@@ -25,13 +25,8 @@ public class LodRegion
 	//Important: byte have a [-128, 127] range. When converting from or to int a 128 should be added or removed
 	//If there is a bug with color then it's probably caused by this.
 	//in the future other fields like transparency and light level could be added
-	private byte[][][][] colors;
 
-	private short[][][] height;
-
-	private short[][][] depth;
-
-	private boolean[][][] dataExistence;
+	private long[][][] data;
 
 
 	public final int regionPosX;
@@ -44,27 +39,16 @@ public class LodRegion
 		this.regionPosZ = regionPos.z;
 		this.minDetailLevel = levelContainer.detailLevel;
 
-		//Array of matrices of arrays
-		colors = new byte[POSSIBLE_LOD][][][];
-
 		//Arrays of matrices
-		height = new short[POSSIBLE_LOD][][];
-		depth = new short[POSSIBLE_LOD][][];
-		dataExistence = new boolean[POSSIBLE_LOD][][];
+		data = new long[POSSIBLE_LOD][][];
 
-		colors[minDetailLevel] = levelContainer.colors;
-		height[minDetailLevel] = levelContainer.height;
-		depth[minDetailLevel] = levelContainer.depth;
-		dataExistence[minDetailLevel] = levelContainer.dataExistence;
+		data[minDetailLevel] = levelContainer.data;
 
 		//Initialize all the different matrices
 		for (byte lod = (byte) (minDetailLevel + 1); lod <= LodUtil.REGION_DETAIL_LEVEL; lod++)
 		{
 			int size = (short) Math.pow(2, LodUtil.REGION_DETAIL_LEVEL - lod);
-			colors[lod] = new byte[size][size][3];
-			height[lod] = new short[size][size];
-			depth[lod] = new short[size][size];
-			dataExistence[lod] = new boolean[size][size];
+			data[lod] = new long[size][size];
 		}
 		updateArea(LodUtil.REGION_DETAIL_LEVEL, regionPosX, regionPosZ);
 	}
@@ -76,23 +60,14 @@ public class LodRegion
 		this.regionPosX = regionPos.x;
 		this.regionPosZ = regionPos.z;
 
-		//Array of matrices of arrays
-		colors = new byte[POSSIBLE_LOD][][][];
-
-		//Arrays of matrices
-		height = new short[POSSIBLE_LOD][][];
-		depth = new short[POSSIBLE_LOD][][];
-		dataExistence = new boolean[POSSIBLE_LOD][][];
+		data = new long[POSSIBLE_LOD][][];
 
 
 		//Initialize all the different matrices
 		for (byte lod = minDetailLevel; lod <= LodUtil.REGION_DETAIL_LEVEL; lod++)
 		{
 			int size = (short) Math.pow(2, LodUtil.REGION_DETAIL_LEVEL - lod);
-			colors[lod] = new byte[size][size][3];
-			height[lod] = new short[size][size];
-			depth[lod] = new short[size][size];
-			dataExistence[lod] = new boolean[size][size];
+			data[lod] = new long[size][size];
 
 		}
 	}
@@ -103,7 +78,7 @@ public class LodRegion
 	 * @param dataPoint
 	 * @return
 	 */
-	public boolean addData(byte detailLevel, int posX, int posZ, short[] dataPoint, boolean serverQuality)
+	public boolean addData(byte detailLevel, int posX, int posZ, long dataPoint, boolean serverQuality)
 	{
 		posX = LevelPosUtil.getRegionModule(detailLevel, posX);
 		posZ = LevelPosUtil.getRegionModule(detailLevel, posZ);
@@ -111,15 +86,10 @@ public class LodRegion
 		{
 
 			//update the number of node present
-			if (this.dataExistence[detailLevel][posX][posZ]) numberOfPoints++;
+			if (!doesDataExist(detailLevel, posX, posZ)) numberOfPoints++;
 
 			//add the node data
-			this.height[detailLevel][posX][posZ] = DataPoint.getHeight(dataPoint);
-			this.depth[detailLevel][posX][posZ] = DataPoint.getDepth(dataPoint);
-			this.colors[detailLevel][posX][posZ][0] = (byte) (DataPoint.getRed(dataPoint) - 128);
-			this.colors[detailLevel][posX][posZ][1] = (byte) (DataPoint.getGreen(dataPoint) - 128);
-			this.colors[detailLevel][posX][posZ][2] = (byte) (DataPoint.getBlue(dataPoint) - 128);
-			this.dataExistence[detailLevel][posX][posZ] = true;
+			this.data[detailLevel][posX][posZ] = dataPoint;
 			return true;
 		} else
 		{
@@ -132,16 +102,11 @@ public class LodRegion
 	 *
 	 * @return the data at the relative pos and level
 	 */
-	public short[] getData(byte detailLevel, int posX, int posZ)
+	public long getData(byte detailLevel, int posX, int posZ)
 	{
 		posX = LevelPosUtil.getRegionModule(detailLevel, posX);
 		posZ = LevelPosUtil.getRegionModule(detailLevel, posZ);
-		return new short[]{height[detailLevel][posX][posZ],
-				depth[detailLevel][posX][posZ],
-				(short) (colors[detailLevel][posX][posZ][0] + 128),
-				(short) (colors[detailLevel][posX][posZ][1] + 128),
-				(short) (colors[detailLevel][posX][posZ][2] + 128)
-		};
+		return data[detailLevel][posX][posZ];
 	}
 
 	/**
@@ -289,96 +254,6 @@ public class LodRegion
 		}
 	}
 
-
-	/*public void updateArea(byte detailLevel, int posX, int posZ)
-	{
-		posX = LevelPosUtil.getRegionModule(detailLevel, posX);
-		posZ = LevelPosUtil.getRegionModule(detailLevel, posZ);
-		int width;
-		int startX;
-		int startZ;
-		for (byte bottom = (byte) (minDetailLevel + 1); bottom <= detailLevel; bottom++)
-		{
-			startX = LevelPosUtil.convert(detailLevel, posX, bottom);
-			startZ = LevelPosUtil.convert(detailLevel, posZ, bottom);
-			width = 1 << (detailLevel - bottom);
-			for (int x = 0; x < width; x++)
-			{
-				for (int z = 0; z < width; z++)
-				{
-					update(bottom, startX + x, startZ + z);
-				}
-			}
-		}
-		for (byte up = (byte) (detailLevel + 1); up <= LodUtil.REGION_DETAIL_LEVEL; up++)
-		{
-			update(up, LevelPosUtil.convert(detailLevel, posX, up), LevelPosUtil.convert(detailLevel, posZ, up));
-		}
-	}
-
-	private void update(byte detailLevel, int posX, int posZ)
-	{
-		int numberOfChildren = 0;
-		int numberOfVoidChildren = 0;
-
-		int tempRed = 0;
-		int tempGreen = 0;
-		int tempBlue = 0;
-		int tempHeight = 0;
-		int tempDepth = 0;
-		int childPosX;
-		int childPosZ;
-		byte childDetailLevel;
-		for (int x = 0; x <= 1; x++)
-		{
-			for (int z = 0; z <= 1; z++)
-			{
-				childDetailLevel = (byte) (detailLevel - 1);
-				childPosX = 2 * posX + x;
-				childPosZ = 2 * posZ + z;
-				if (doesDataExist(childDetailLevel, childPosX, childPosZ))
-				{
-					if (height[childDetailLevel][childPosX][childPosZ] != LodBuilder.DEFAULT_HEIGHT
-							    && depth[childDetailLevel][childPosX][childPosZ] != LodBuilder.DEFAULT_DEPTH)
-					{
-						numberOfChildren++;
-
-						tempRed += colors[childDetailLevel][childPosX][childPosZ][0];
-						tempGreen += colors[childDetailLevel][childPosX][childPosZ][1];
-						tempBlue += colors[childDetailLevel][childPosX][childPosZ][2];
-						tempHeight += height[childDetailLevel][childPosX][childPosZ];
-						tempDepth += depth[childDetailLevel][childPosX][childPosZ];
-					} else
-					{
-						// void children have the default height (most likely -1)
-						// and represent a LOD with no blocks in it
-						numberOfVoidChildren++;
-					}
-				}
-			}
-		}
-
-		if (numberOfChildren > 0)
-		{
-			colors[detailLevel][posX][posZ][0] = (byte) (tempRed / numberOfChildren);
-			colors[detailLevel][posX][posZ][1] = (byte) (tempGreen / numberOfChildren);
-			colors[detailLevel][posX][posZ][2] = (byte) (tempBlue / numberOfChildren);
-			height[detailLevel][posX][posZ] = (short) (tempHeight / numberOfChildren);
-			depth[detailLevel][posX][posZ] = (short) (tempDepth / numberOfChildren);
-			dataExistence[detailLevel][posX][posZ] = true;
-		} else if (numberOfVoidChildren > 0)
-		{
-			colors[detailLevel][posX][posZ][0] = (byte) 0;
-			colors[detailLevel][posX][posZ][1] = (byte) 0;
-			colors[detailLevel][posX][posZ][2] = (byte) 0;
-
-			height[detailLevel][posX][posZ] = LodBuilder.DEFAULT_HEIGHT;
-			depth[detailLevel][posX][posZ] = LodBuilder.DEFAULT_DEPTH;
-
-			dataExistence[detailLevel][posX][posZ] = true;
-		}
-	}*/
-
 	/**
 	 */
 	public void updateArea(byte detailLevel, int posX, int posZ)
@@ -433,16 +308,16 @@ public class LodRegion
 				childDetailLevel = (byte) (detailLevel - 1);
 				if (doesDataExist(childDetailLevel, childPosX, childPosZ))
 				{
-					if (height[childDetailLevel][childPosX][childPosZ] != LodBuilder.DEFAULT_HEIGHT
-							    && depth[childDetailLevel][childPosX][childPosZ] != LodBuilder.DEFAULT_DEPTH)
+					if (DataPoint.getHeight(data[childDetailLevel][childPosX][childPosZ]) != LodBuilder.DEFAULT_HEIGHT
+							    && DataPoint.getDepth(data[childDetailLevel][childPosX][childPosZ]) != LodBuilder.DEFAULT_DEPTH)
 					{
 						numberOfChildren++;
 
-						tempRed += colors[childDetailLevel][childPosX][childPosZ][0];
-						tempGreen += colors[childDetailLevel][childPosX][childPosZ][1];
-						tempBlue += colors[childDetailLevel][childPosX][childPosZ][2];
-						tempHeight += height[childDetailLevel][childPosX][childPosZ];
-						tempDepth += depth[childDetailLevel][childPosX][childPosZ];
+						tempRed += DataPoint.getRed(data[childDetailLevel][childPosX][childPosZ]);
+						tempGreen += DataPoint.getGreen(data[childDetailLevel][childPosX][childPosZ]);
+						tempBlue += DataPoint.getBlue(data[childDetailLevel][childPosX][childPosZ]);
+						tempHeight += DataPoint.getHeight(data[childDetailLevel][childPosX][childPosZ]);
+						tempDepth += DataPoint.getDepth(data[childDetailLevel][childPosX][childPosZ]);
 					} else
 					{
 						// void children have the default height (most likely -1)
@@ -453,25 +328,23 @@ public class LodRegion
 			}
 		}
 
+		long newData;
 		if (numberOfChildren > 0)
 		{
-			colors[detailLevel][posX][posZ][0] = (byte) (tempRed / numberOfChildren);
-			colors[detailLevel][posX][posZ][1] = (byte) (tempGreen / numberOfChildren);
-			colors[detailLevel][posX][posZ][2] = (byte) (tempBlue / numberOfChildren);
-			height[detailLevel][posX][posZ] = (short) (tempHeight / numberOfChildren);
-			depth[detailLevel][posX][posZ] = (short) (tempDepth / numberOfChildren);
-			dataExistence[detailLevel][posX][posZ] = true;
+			tempRed /= numberOfChildren;
+			tempGreen /= numberOfChildren;
+			tempBlue /= numberOfChildren;
+			tempHeight /= numberOfChildren;
+			tempDepth /= numberOfChildren;
 		} else if (numberOfVoidChildren > 0)
 		{
-			colors[detailLevel][posX][posZ][0] = (byte) 0;
-			colors[detailLevel][posX][posZ][1] = (byte) 0;
-			colors[detailLevel][posX][posZ][2] = (byte) 0;
-
-			height[detailLevel][posX][posZ] = LodBuilder.DEFAULT_HEIGHT;
-			depth[detailLevel][posX][posZ] = LodBuilder.DEFAULT_DEPTH;
-
-			dataExistence[detailLevel][posX][posZ] = true;
+			tempRed = (byte) 0;
+			tempGreen = (byte) 0;
+			tempBlue = (byte) 0;
+			tempHeight = LodBuilder.DEFAULT_HEIGHT;
+			tempDepth = LodBuilder.DEFAULT_DEPTH;
 		}
+		data[detailLevel][posX][posZ] = DataPoint.createDataPoint(tempHeight, tempDepth, tempRed, tempGreen, tempBlue);
 	}
 
 
@@ -484,7 +357,7 @@ public class LodRegion
 		posZ = LevelPosUtil.getRegionModule(detailLevel, posZ);
 		try
 		{
-			return dataExistence[detailLevel][posX][posZ];
+			return DataPoint.doesItExist(data[detailLevel][posX][posZ]);
 		} catch (NullPointerException e)
 		{
 			return false;
@@ -516,7 +389,7 @@ public class LodRegion
 		{
 			throw new IllegalArgumentException("getLevel asked for a level that does not exist: minimum " + minDetailLevel + " level requested " + detailLevel);
 		}
-		return new LevelContainer(detailLevel, colors[detailLevel], height[detailLevel], depth[detailLevel], dataExistence[detailLevel]);
+		return new LevelContainer(detailLevel, data[detailLevel]);
 	}
 
 	/**
@@ -529,10 +402,7 @@ public class LodRegion
 			throw new IllegalArgumentException("addLevel requires a level that is at least the minimum level of the region -1 ");
 		}
 		if (levelContainer.detailLevel == minDetailLevel - 1) minDetailLevel = levelContainer.detailLevel;
-		colors[levelContainer.detailLevel] = levelContainer.colors;
-		height[levelContainer.detailLevel] = levelContainer.height;
-		depth[levelContainer.detailLevel] = levelContainer.depth;
-		dataExistence[levelContainer.detailLevel] = levelContainer.dataExistence;
+		data[levelContainer.detailLevel] = levelContainer.data;
 
 	}
 
@@ -545,10 +415,7 @@ public class LodRegion
 		{
 			for (byte tempLod = 0; tempLod < detailLevel; tempLod++)
 			{
-				colors[tempLod] = new byte[0][0][0];
-				height[tempLod] = new short[0][0];
-				depth[tempLod] = new short[0][0];
-				dataExistence[tempLod] = new boolean[0][0];
+				data[tempLod] = new long[0][0];
 			}
 			minDetailLevel = detailLevel;
 		}
@@ -564,10 +431,7 @@ public class LodRegion
 			for (byte tempLod = detailLevel; tempLod < minDetailLevel; tempLod++)
 			{
 				int size = (short) Math.pow(2, LodUtil.REGION_DETAIL_LEVEL - tempLod);
-				colors[tempLod] = new byte[size][size][3];
-				height[tempLod] = new short[size][size];
-				depth[tempLod] = new short[size][size];
-				dataExistence[tempLod] = new boolean[size][size];
+				data[tempLod] = new long[size][size];
 			}
 			minDetailLevel = detailLevel;
 		}

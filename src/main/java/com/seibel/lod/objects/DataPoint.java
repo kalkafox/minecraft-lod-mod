@@ -1,5 +1,7 @@
 package com.seibel.lod.objects;
 
+import org.lwjgl.system.CallbackI;
+
 public class DataPoint
 {
 	public final static int HEIGHT_SHIFT = 54;
@@ -10,6 +12,7 @@ public class DataPoint
 	public final static int GEN_TYPE_SHIFT = 17;
 	public final static int LIGHT_SHIFT = 13;
 	public final static int EXISTENCE_SHIFT = 12;
+
 	public final static long HEIGHT_MASK = Long.parseUnsignedLong("1111111111", 2) << HEIGHT_SHIFT;
 	public final static long DEPTH_MASK = Long.parseUnsignedLong("1111111111", 2) << DEPTH_SHIFT;
 	public final static long RED_MASK = Long.parseUnsignedLong("11111111", 2) << RED_SHIFT;
@@ -69,5 +72,21 @@ public class DataPoint
 		int G = (getGreen(dataPoint) << 8) & 0x0000FF00;
 		int B = getBlue(dataPoint)& 0x000000FF;
 		return 0xFF000000 | R | G | B;
+	}
+
+	public static String toString(long dataPoint)
+	{
+		StringBuilder s = new StringBuilder();
+		s.append(getHeight(dataPoint));
+		s.append(" ");
+		s.append(getDepth(dataPoint));
+		s.append(" ");
+		s.append(getRed(dataPoint));
+		s.append(" ");
+		s.append(getBlue(dataPoint));
+		s.append(" ");
+		s.append(getGreen(dataPoint));
+		s.append('\n');
+		return s.toString();
 	}
 }

@@ -25,13 +25,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.seibel.lod.objects.LevelPosUtil;
-import com.seibel.lod.objects.PosToRenderContainer;
+import com.seibel.lod.objects.*;
 import org.lwjgl.opengl.GL11;
 
 import com.seibel.lod.config.LodConfig;
-import com.seibel.lod.objects.LodDimension;
-import com.seibel.lod.objects.RegionPos;
 import com.seibel.lod.proxy.ClientProxy;
 import com.seibel.lod.render.LodRenderer;
 import com.seibel.lod.util.LodThreadFactory;
@@ -215,6 +212,7 @@ public class LodBufferBuilder
 										playerBlockPosRounded.getX(),
 										playerBlockPosRounded.getZ());
 
+								System.out.println(posToRender);
 								byte detailLevel;
 								int posX;
 								int posZ;
@@ -270,7 +268,7 @@ public class LodBufferBuilder
 													}
 												}
 											}
-
+											System.out.println(DataPoint.toString(lodData));
 											LodConfig.CLIENT.graphics.lodTemplate.get().template.addLodToBuffer(currentBuffer, playerBlockPos, lodData, adjData,
 													detailLevel, posX, posZ, renderer.previousDebugMode);
 										}

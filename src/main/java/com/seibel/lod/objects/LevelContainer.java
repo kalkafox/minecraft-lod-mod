@@ -56,6 +56,7 @@ public class LevelContainer implements Serializable
 			{
 				//Converting the dataToHex
 				stringBuilder.append(Long.toHexString(data[x][z]));
+				stringBuilder.append(DATA_DELIMITER);
 			}
 		}
 		return stringBuilder.toString();
