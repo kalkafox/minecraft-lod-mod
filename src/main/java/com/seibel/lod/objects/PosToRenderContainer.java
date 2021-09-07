@@ -79,7 +79,7 @@ public class PosToRenderContainer
 
 	public byte getNthDetailLevel(int n)
 	{
-		return posToRender[n][0];
+		return (byte) posToRender[n][0];
 	}
 	public int getNthPosX(int n)
 	{
