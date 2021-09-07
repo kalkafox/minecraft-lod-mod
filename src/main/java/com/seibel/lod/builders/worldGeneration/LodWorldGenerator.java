@@ -115,7 +115,7 @@ public class LodWorldGenerator
 
 					ServerWorld serverWorld = LodUtil.getServerWorldFromDimension(lodDim.dimension);
 
-					byte farDetail = (byte) 7;
+					byte farDetail = (byte) 8;
 					PosToGenerateContainer posToGenerate = lodDim.getDataToGenerate(
 							farDetail,
 							maxChunkGenRequests,

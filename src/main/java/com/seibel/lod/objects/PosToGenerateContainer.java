@@ -88,18 +88,18 @@ public class PosToGenerateContainer
 
 	public int[] getNthPos(int n)
 	{
-		if(n < farSize)
+		/*if(n < farSize)
 			return posToGenerate[maxSize - n - 1];
 		else
-			return posToGenerate[n - farSize];
-		/*int index;
+			return posToGenerate[n - farSize];*/
+		int index;
 		if (n > farSize * 2)
 			index = n - farSize;
 		else if (n % 2 == 0)
 			index = n / 2;
 		else
 			index = posToGenerate.length - n / 2 - 1;
-		return posToGenerate[index];*/
+		return posToGenerate[index];
 	}
 
 	public String toString()

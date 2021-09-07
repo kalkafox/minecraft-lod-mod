@@ -20,6 +20,13 @@ public class DataPoint
 	public final static long LIGHT_MASK = Long.parseUnsignedLong("1111", 2);
 	public final static long EXISTENCE_MASK = 1;
 
+	public static long createDataPoint(int height, int depth, int color)
+	{
+		int red = (getRed(color) << 16) & 0x00FF0000;
+		int green = (getGreen(color) << 8) & 0x0000FF00;
+		int blue = getBlue(color)& 0x000000FF;
+		return createDataPoint(height, depth, red, green, blue);
+	}
 	public static long createDataPoint(int height, int depth, int red, int green, int blue)
 	{
 		long dataPoint = 0;

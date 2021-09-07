@@ -187,7 +187,9 @@ public class LodBufferBuilder
 
 							// local position in the vbo and bufferBuilder arrays
 							BufferBuilder currentBuffer = buildableBuffers[xRegion][zRegion];
-							byte minDetail = lodDim.getRegion(regionPos.x, regionPos.z).getMinDetailLevel();
+							LodRegion region = lodDim.getRegion(regionPos.x, regionPos.z);
+							if (region == null) continue;
+							byte minDetail = region.getMinDetailLevel();
 							// make sure the buffers weren't
 							// changed while we were running this method
 							if (currentBuffer == null || (currentBuffer != null && !currentBuffer.building()))

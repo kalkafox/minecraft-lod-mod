@@ -166,7 +166,7 @@ public class LodBuilder
 		int startZ;
 		int endX;
 		int endZ;
-		short[] color;
+		int color;
 		short height;
 		short depth;
 		long data;
@@ -204,7 +204,7 @@ public class LodBuilder
 				posX = LevelPosUtil.convert((byte) 0, chunk.getPos().x * 16 + startX, detail.detailLevel);
 				posZ = LevelPosUtil.convert((byte) 0, chunk.getPos().z * 16 + startZ, detail.detailLevel);
 				boolean isServer = config.distanceGenerationMode == DistanceGenerationMode.SERVER;
-				data = DataPoint.createDataPoint(height, depth, color[0], color[1], color[2]);
+				data = DataPoint.createDataPoint(height, depth, ColorUtil.getRed(color), ColorUtil.getGreen(color), ColorUtil.getBlue(color));
 				lodDim.addData(detailLevel,
 						posX,
 						posZ,
@@ -354,7 +354,7 @@ public class LodBuilder
 	 *                                        otherwise only use the block's
 	 *                                        material color
 	 */
-	private short[] generateLodColorForArea(IChunk chunk, LodBuilderConfig config, int startX, int startZ, int endX,
+	private int generateLodColorForArea(IChunk chunk, LodBuilderConfig config, int startX, int startZ, int endX,
 	                                        int endZ)
 	{
 		ChunkSection[] chunkSections = chunk.getSections();
@@ -429,8 +429,7 @@ public class LodBuilder
 		red /= numbOfBlocks;
 		green /= numbOfBlocks;
 		blue /= numbOfBlocks;
-
-		return new short[]{(short) red, (short) green, (short) blue};
+		return ColorUtil.rgbToInt(red,green,blue);
 	}
 
 	/**
