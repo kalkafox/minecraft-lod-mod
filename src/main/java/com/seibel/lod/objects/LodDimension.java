@@ -67,8 +67,10 @@ public class LodDimension
 	public volatile LodRegion regions[][];
 	public volatile boolean isRegionDirty[][];
 	public volatile boolean regen[][];
-	/** if true that means there are regions in this dimension
-	 * that need to have their buffers rebuilt. */
+	/**
+	 * if true that means there are regions in this dimension
+	 * that need to have their buffers rebuilt.
+	 */
 	public volatile boolean regenDimension = false;
 
 	private volatile RegionPos center;
@@ -277,11 +279,14 @@ public class LodDimension
 		int zIndex = (zRegion - center.z) + halfWidth;
 
 		if (!regionIsInRange(xRegion, zRegion))
-			throw new ArrayIndexOutOfBoundsException("Region for level pos " + LevelPosUtil.toString(detailLevel, posX, posZ) + " out of range");
+			return null;
+			//throw new ArrayIndexOutOfBoundsException("Region for level pos " + LevelPosUtil.toString(detailLevel, posX, posZ) + " out of range");
 		else if (regions[xIndex][zIndex] == null)
-			throw new InvalidParameterException("Region for level pos " + LevelPosUtil.toString(detailLevel, posX, posZ) + " not currently initialized");
+			return null;
+			//throw new InvalidParameterException("Region for level pos " + LevelPosUtil.toString(detailLevel, posX, posZ) + " not currently initialized");
 		else if (regions[xIndex][zIndex].getMinDetailLevel() > detailLevel)
-			throw new InvalidParameterException("Region for level pos " + LevelPosUtil.toString(detailLevel, posX, posZ) + " currently only reach level " + regions[xIndex][zIndex].getMinDetailLevel());
+			return null;
+			//throw new InvalidParameterException("Region for level pos " + LevelPosUtil.toString(detailLevel, posX, posZ) + " currently only reach level " + regions[xIndex][zIndex].getMinDetailLevel());
 		return regions[xIndex][zIndex];
 	}
 
@@ -297,9 +302,11 @@ public class LodDimension
 		int zIndex = (regionPosZ - center.z) + halfWidth;
 
 		if (!regionIsInRange(regionPosX, regionPosZ))
-			throw new ArrayIndexOutOfBoundsException("Region " + regionPosX + " " + regionPosZ + " out of range");
+			return null;
+			//throw new ArrayIndexOutOfBoundsException("Region " + regionPosX + " " + regionPosZ + " out of range");
 		else if (regions[xIndex][zIndex] == null)
-			throw new InvalidParameterException("Region " + regionPosX + " " + regionPosZ + " not currently initialized");
+			return null;
+		//throw new InvalidParameterException("Region " + regionPosX + " " + regionPosZ + " not currently initialized");
 		return regions[xIndex][zIndex];
 	}
 
@@ -439,11 +446,12 @@ public class LodDimension
 	{
 
 		// don't continue if the region can't be saved
-		int regionPosX = LevelPosUtil.getRegion(detailLevel,posX);
-		int regionPosZ = LevelPosUtil.getRegion(detailLevel,posZ);
+		int regionPosX = LevelPosUtil.getRegion(detailLevel, posX);
+		int regionPosZ = LevelPosUtil.getRegion(detailLevel, posZ);
 
 		LodRegion region = getRegion(regionPosX, regionPosZ);
-
+		if (region == null)
+			return false;
 		boolean nodeAdded = region.addData(detailLevel, posX, posZ, lodDataPoint, serverQuality);
 		// only save valid LODs to disk
 		if (!dontSave && fileHandler != null)
@@ -466,7 +474,8 @@ public class LodDimension
 		return nodeAdded;
 	}
 
-	public void setToRegen(int xRegion, int zRegion){
+	public void setToRegen(int xRegion, int zRegion)
+	{
 		int xIndex = (xRegion - center.x) + halfWidth;
 		int zIndex = (zRegion - center.z) + halfWidth;
 		regen[xIndex][zIndex] = true;
@@ -477,9 +486,9 @@ public class LodDimension
 	 *
 	 * @return list of quadTrees
 	 */
-	public PosToGenerateContainer getDataToGenerate(byte farDetail, int maxDataToGenerate, double farRatio,int playerPosX, int playerPosZ)
+	public PosToGenerateContainer getDataToGenerate(byte farDetail, int maxDataToGenerate, double farRatio, int playerPosX, int playerPosZ)
 	{
-		PosToGenerateContainer posToGenerate = new PosToGenerateContainer(farDetail, maxDataToGenerate, (int) (maxDataToGenerate*farRatio), playerPosX, playerPosZ);
+		PosToGenerateContainer posToGenerate = new PosToGenerateContainer(farDetail, maxDataToGenerate, (int) (maxDataToGenerate * farRatio), playerPosX, playerPosZ);
 		int n = regions.length;
 		int xIndex;
 		int zIndex;
@@ -488,17 +497,12 @@ public class LodDimension
 		{
 			for (int zRegion = 0; zRegion < n; zRegion++)
 			{
-				try
-				{
-					xIndex = (xRegion + center.x) - halfWidth;
-					zIndex = (zRegion + center.z) - halfWidth;
-					region = getRegion(xIndex, zIndex);
+				xIndex = (xRegion + center.x) - halfWidth;
+				zIndex = (zRegion + center.z) - halfWidth;
+				region = getRegion(xIndex, zIndex);
+				if (region != null)
 					region.getDataToGenerate(posToGenerate, playerPosX, playerPosZ);
 
-				} catch (Exception e)
-				{
-					//e.printStackTrace();
-				}
 			}
 		}
 		return posToGenerate;
@@ -511,17 +515,9 @@ public class LodDimension
 	 */
 	public void getDataToRender(PosToRenderContainer posToRender, RegionPos regionPos, int playerPosX, int playerPosZ)
 	{
-		try
-		{
-			LodRegion region = getRegion(regionPos.x, regionPos.z);
+		LodRegion region = getRegion(regionPos.x, regionPos.z);
+		if (region != null)
 			region.getDataToRender(posToRender, playerPosX, playerPosZ);
-		} catch (NullPointerException e)
-		{
-			//e.printStackTrace();
-		} catch (Exception e)
-		{
-			//e.printStackTrace();
-		}
 	}
 
 	/**
@@ -536,21 +532,14 @@ public class LodDimension
 		if (detailLevel > LodUtil.REGION_DETAIL_LEVEL)
 			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
 
-		try
-		{
-			LodRegion region = getRegion(detailLevel, posX, posZ);
+		LodRegion region = getRegion(detailLevel, posX, posZ);
 
-			if (region == null)
-			{
-				return 0;
-			}
-
-			return region.getData(detailLevel, posX, posZ);
-
-		} catch (Exception e)
+		if (region == null)
 		{
 			return 0;
 		}
+
+		return region.getData(detailLevel, posX, posZ);
 	}
 
 
@@ -581,20 +570,14 @@ public class LodDimension
 	 */
 	public boolean doesDataExist(byte detailLevel, int posX, int posZ)
 	{
-		try
-		{
-			LodRegion region = getRegion(detailLevel, posX, posZ);
+		LodRegion region = getRegion(detailLevel, posX, posZ);
 
-			if (region == null)
-			{
-				return false;
-			}
-
-			return region.doesDataExist(detailLevel, posX, posZ);
-		} catch (Exception e)
+		if (region == null)
 		{
 			return false;
 		}
+
+		return region.doesDataExist(detailLevel, posX, posZ);
 	}
 
 	/**
@@ -697,7 +680,6 @@ public class LodDimension
 			}
 			stringBuilder.append("\n");
 		}
-		System.out.println(stringBuilder);
 		return stringBuilder.toString();
 	}
 }

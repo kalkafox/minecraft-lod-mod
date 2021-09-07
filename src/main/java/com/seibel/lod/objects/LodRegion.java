@@ -19,7 +19,7 @@ public class LodRegion
 	//x coord,
 	private byte minDetailLevel;
 	private static final byte POSSIBLE_LOD = 10;
-	private int numberOfPoints;
+	//private int numberOfPoints;
 	private DistanceGenerationMode generationMode;
 	//For each of the following field the first slot is for the level of detail
 	//Important: byte have a [-128, 127] range. When converting from or to int a 128 should be added or removed
@@ -86,7 +86,7 @@ public class LodRegion
 		{
 
 			//update the number of node present
-			if (!doesDataExist(detailLevel, posX, posZ)) numberOfPoints++;
+			//if (!doesDataExist(detailLevel, posX, posZ)) numberOfPoints++;
 
 			//add the node data
 			this.data[detailLevel][posX][posZ] = dataPoint;
@@ -327,15 +327,13 @@ public class LodRegion
 				}
 			}
 		}
-
-		long newData;
 		if (numberOfChildren > 0)
 		{
-			tempRed /= numberOfChildren;
-			tempGreen /= numberOfChildren;
-			tempBlue /= numberOfChildren;
-			tempHeight /= numberOfChildren;
-			tempDepth /= numberOfChildren;
+			tempRed = tempRed / numberOfChildren;
+			tempGreen = tempGreen / numberOfChildren;
+			tempBlue = tempBlue / numberOfChildren;
+			tempHeight = tempHeight / numberOfChildren;
+			tempDepth = tempDepth / numberOfChildren;
 		} else if (numberOfVoidChildren > 0)
 		{
 			tempRed = (byte) 0;
@@ -353,15 +351,10 @@ public class LodRegion
 	 */
 	public boolean doesDataExist(byte detailLevel, int posX, int posZ)
 	{
+		if(detailLevel < minDetailLevel) return false;
 		posX = LevelPosUtil.getRegionModule(detailLevel, posX);
 		posZ = LevelPosUtil.getRegionModule(detailLevel, posZ);
-		try
-		{
-			return DataPoint.doesItExist(data[detailLevel][posX][posZ]);
-		} catch (NullPointerException e)
-		{
-			return false;
-		}
+		return DataPoint.doesItExist(data[detailLevel][posX][posZ]);
 	}
 
 	/**

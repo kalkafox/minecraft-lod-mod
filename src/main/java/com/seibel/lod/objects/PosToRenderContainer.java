@@ -89,6 +89,7 @@ public class PosToRenderContainer
 	{
 		return posToRender[n][2];
 	}
+
 	public int[] getNthPos(int n)
 	{
 		return posToRender[n];

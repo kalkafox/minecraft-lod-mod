@@ -24,10 +24,7 @@ import java.util.logging.Level;
 
 import com.seibel.lod.enums.DistanceGenerationMode;
 import com.seibel.lod.enums.LodDetail;
-import com.seibel.lod.objects.DataPoint;
-import com.seibel.lod.objects.LevelPosUtil;
-import com.seibel.lod.objects.LodDimension;
-import com.seibel.lod.objects.LodWorld;
+import com.seibel.lod.objects.*;
 import com.seibel.lod.util.ColorUtil;
 import com.seibel.lod.util.DetailDistanceUtil;
 import com.seibel.lod.util.LodThreadFactory;
@@ -133,7 +130,6 @@ public class LodBuilder
 				generateLodNodeFromChunk(lodDim, chunk, new LodBuilderConfig(generationMode));
 			} catch (IllegalArgumentException | NullPointerException e)
 			{
-				System.out.println("Chunk pos " + chunk.getPos());
 				e.printStackTrace();
 				// if the world changes while LODs are being generated
 				// they will throw errors as they try to access things that no longer
@@ -176,14 +172,13 @@ public class LodBuilder
 		long data;
 		try
 		{
-			LodDetail detail = null;
-			try
-			{
-				byte minDetailLevel = lodDim.getRegion(chunk.getPos().getRegionX(), chunk.getPos().getRegionZ()).getMinDetailLevel();
-				detail = DetailDistanceUtil.getLodGenDetail(minDetailLevel);
-			}catch (Exception e){
-				detail = DetailDistanceUtil.getLodGenDetail(LodUtil.CHUNK_DETAIL_LEVEL);
-			}
+			LodDetail detail;
+			LodRegion region = lodDim.getRegion(chunk.getPos().getRegionX(), chunk.getPos().getRegionZ());
+			if (region == null)
+				return;
+			byte minDetailLevel = region.getMinDetailLevel();
+			detail = DetailDistanceUtil.getLodGenDetail(minDetailLevel);
+
 			byte detailLevel = detail.detailLevel;
 			int posX;
 			int posZ;

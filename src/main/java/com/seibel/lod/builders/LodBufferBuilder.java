@@ -212,7 +212,6 @@ public class LodBufferBuilder
 										playerBlockPosRounded.getX(),
 										playerBlockPosRounded.getZ());
 
-								System.out.println(posToRender);
 								byte detailLevel;
 								int posX;
 								int posZ;
@@ -268,7 +267,6 @@ public class LodBufferBuilder
 													}
 												}
 											}
-											System.out.println(DataPoint.toString(lodData));
 											LodConfig.CLIENT.graphics.lodTemplate.get().template.addLodToBuffer(currentBuffer, playerBlockPos, lodData, adjData,
 													detailLevel, posX, posZ, renderer.previousDebugMode);
 										}

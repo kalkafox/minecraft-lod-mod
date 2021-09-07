@@ -1,7 +1,5 @@
 package com.seibel.lod.objects;
 
-import org.lwjgl.system.CallbackI;
-
 public class DataPoint
 {
 	public final static int HEIGHT_SHIFT = 54;
@@ -11,54 +9,54 @@ public class DataPoint
 	public final static int BLUE_SHIFT = 20;
 	public final static int GEN_TYPE_SHIFT = 17;
 	public final static int LIGHT_SHIFT = 13;
-	public final static int EXISTENCE_SHIFT = 12;
+	public final static int EXISTENCE_SHIFT = 0;
 
-	public final static long HEIGHT_MASK = Long.parseUnsignedLong("1111111111", 2) << HEIGHT_SHIFT;
-	public final static long DEPTH_MASK = Long.parseUnsignedLong("1111111111", 2) << DEPTH_SHIFT;
-	public final static long RED_MASK = Long.parseUnsignedLong("11111111", 2) << RED_SHIFT;
-	public final static long GREEN_MASK = Long.parseUnsignedLong("11111111", 2) << GREEN_SHIFT;
-	public final static long BLUE_MASK = Long.parseUnsignedLong("11111111", 2) << BLUE_SHIFT;
-	public final static long GEN_TYPE_MASK = Long.parseUnsignedLong("111", 2) << GEN_TYPE_SHIFT;
-	public final static long LIGHT_MASK = Long.parseUnsignedLong("1111", 2) << LIGHT_SHIFT;
-	public final static long EXISTENCE_MASK = Long.parseUnsignedLong("1", 2) << EXISTENCE_SHIFT;
+	public final static long HEIGHT_MASK = Long.parseUnsignedLong("1111111111", 2);
+	public final static long DEPTH_MASK = Long.parseUnsignedLong("1111111111", 2);
+	public final static long RED_MASK = Long.parseUnsignedLong("11111111", 2);
+	public final static long GREEN_MASK = Long.parseUnsignedLong("11111111", 2);
+	public final static long BLUE_MASK = Long.parseUnsignedLong("11111111", 2);
+	public final static long GEN_TYPE_MASK = Long.parseUnsignedLong("111", 2);
+	public final static long LIGHT_MASK = Long.parseUnsignedLong("1111", 2);
+	public final static long EXISTENCE_MASK = 1;
 
 	public static long createDataPoint(int height, int depth, int red, int green, int blue)
 	{
 		long dataPoint = 0;
-		dataPoint += height << HEIGHT_SHIFT;
-		dataPoint += depth << HEIGHT_SHIFT;
-		dataPoint += red << HEIGHT_SHIFT;
-		dataPoint += green << HEIGHT_SHIFT;
-		dataPoint += blue << HEIGHT_SHIFT;
-		dataPoint += 1 << EXISTENCE_SHIFT;
+		dataPoint += (height & HEIGHT_MASK) << HEIGHT_SHIFT;
+		dataPoint += (depth & DEPTH_MASK) << DEPTH_SHIFT;
+		dataPoint += (red & RED_MASK) << RED_SHIFT;
+		dataPoint += (green & GREEN_MASK) << GREEN_SHIFT;
+		dataPoint += (blue & BLUE_MASK) << BLUE_SHIFT;
+		dataPoint += 1;
 		return dataPoint;
 	}
 
 	public static short getHeight(long dataPoint)
 	{
-		return (short) (dataPoint & HEIGHT_MASK);
+		return (short) ((dataPoint >> HEIGHT_SHIFT) & HEIGHT_MASK);
 	}
 
 	public static short getDepth(long dataPoint)
 	{
 
-		return (short) (dataPoint & DEPTH_MASK);
+		return (short) ((dataPoint >> DEPTH_SHIFT) & DEPTH_MASK);
 	}
 
 	public static short getRed(long dataPoint)
 	{
 
-		return (short) (dataPoint & RED_MASK);
+		return (short) ((dataPoint >> RED_SHIFT) & RED_MASK);
 	}
 
 	public static short getGreen(long dataPoint)
 	{
-		return (short) (dataPoint & GREEN_MASK);
+		return (short) ((dataPoint >> GREEN_SHIFT) & GREEN_MASK);
 	}
 
 	public static short getBlue(long dataPoint)
 	{
-		return (short) (dataPoint & BLUE_MASK);
+		return (short) ((dataPoint >> BLUE_SHIFT) & BLUE_MASK);
 	}
 
 	public static boolean doesItExist(long dataPoint)
