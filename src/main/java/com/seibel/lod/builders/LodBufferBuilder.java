@@ -107,6 +107,7 @@ public class LodBufferBuilder
 	//in order -x, +x, -z, +z
 	private static final int[][] ADJ_DIRECTION = new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
+	private volatile Object[][] setsToRender;
 	private volatile RegionPos center;
 
 	public LodBufferBuilder()
@@ -169,6 +170,14 @@ public class LodBufferBuilder
 				if (center == null)
 					center = playerRegionPos;
 
+				if (setsToRender == null)
+					setsToRender = new Object[lodDim.regions.length][lodDim.regions.length];
+
+				if (setsToRender.length != lodDim.regions.length)
+					setsToRender = new Object[lodDim.regions.length][lodDim.regions.length];
+
+
+
 				for (int xRegion = 0; xRegion < lodDim.regions.length; xRegion++)
 				{
 					for (int zRegion = 0; zRegion < lodDim.regions.length; zRegion++)
@@ -181,15 +190,24 @@ public class LodBufferBuilder
 
 							// local position in the vbo and bufferBuilder arrays
 							BufferBuilder currentBuffer = buildableBuffers[xRegion][zRegion];
-
+							byte minDetail = lodDim.getRegion(regionPos.x, regionPos.z).getMinDetailLevel();
+							//previous setToRender chache
+							if (setsToRender[xRegion][zRegion] == null)
+							{
+								setsToRender[xRegion][zRegion] = new PosToRenderContainer(minDetail, regionPos.x, regionPos.z);
+							}
 							// make sure the buffers weren't
 							// changed while we were running this method
 							if (currentBuffer == null || (currentBuffer != null && !currentBuffer.building()))
 								return;
 							//previous setToRender chache
+
+							PosToRenderContainer posToRender = (PosToRenderContainer) setsToRender[xRegion][zRegion];
+							posToRender.clear(minDetail, regionPos.x, regionPos.z);
 							Callable<Boolean> dataToRenderThread = () ->
 							{
-								PosToRenderContainer posToRender = lodDim.getDataToRender(
+								lodDim.getDataToRender(
+										posToRender,
 										regionPos,
 										playerBlockPosRounded.getX(),
 										playerBlockPosRounded.getZ());
@@ -202,18 +220,16 @@ public class LodBufferBuilder
 								int chunkXdist;
 								int chunkZdist;
 								short gameChunkRenderDistance = (short) (renderer.vanillaRenderedChunks.length / 2 - 1);
-								int[] levelPos;
 								short[] lodData;
 								short[][] adjData;
 								for (int index = 0; index < posToRender.getNumberOfPos(); index++)
 								{
-									levelPos = posToRender.getNthPos(index);
-									detailLevel = LevelPosUtil.getDetailLevel(levelPos);
-									posX = LevelPosUtil.getPosX(levelPos);
-									posZ = LevelPosUtil.getPosZ(levelPos);
+									detailLevel = posToRender.getNthDetailLevel(index);
+									posX = posToRender.getNthPosX(index);
+									posZ = posToRender.getNthPosZ(index);
 									// skip any chunks that Minecraft is going to render
-									chunkXdist = LevelPosUtil.getChunkPosX(levelPos) - playerChunkPos.x;
-									chunkZdist = LevelPosUtil.getChunkPosZ(levelPos) - playerChunkPos.z;
+									chunkXdist = LevelPosUtil.getChunkPos(detailLevel, posX) - playerChunkPos.x;
+									chunkZdist = LevelPosUtil.getChunkPos(detailLevel, posZ) - playerChunkPos.z;
 									if (gameChunkRenderDistance >= Math.abs(chunkXdist)
 											    && gameChunkRenderDistance >= Math.abs(chunkZdist)
 											    && detailLevel <= LodUtil.CHUNK_DETAIL_LEVEL
@@ -253,17 +269,15 @@ public class LodBufferBuilder
 											}
 
 											LodConfig.CLIENT.graphics.lodTemplate.get().template.addLodToBuffer(currentBuffer, playerBlockPos, lodData, adjData,
-													levelPos, renderer.previousDebugMode);
+													detailLevel, posX, posZ, renderer.previousDebugMode);
 										}
 									} catch (ArrayIndexOutOfBoundsException e)
 									{
 										e.printStackTrace();
-										posToRender.clear();
 										return false;
 									}
 
 								}// for pos to in list to render
-								posToRender.clear();
 								// the thread executed successfully
 								return true;
 							};

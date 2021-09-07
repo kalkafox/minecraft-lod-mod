@@ -232,11 +232,9 @@ public class LodRegion
 	/**
 	 * @return
 	 */
-	public PosToRenderContainer getDataToRender(int playerPosX, int playerPosZ)
+	public void getDataToRender(PosToRenderContainer posToRender, int playerPosX, int playerPosZ)
 	{
-		PosToRenderContainer posToRender = new PosToRenderContainer(minDetailLevel, regionPosX, regionPosZ);
 		getDataToRender(posToRender, LodUtil.REGION_DETAIL_LEVEL, 0, 0, playerPosX, playerPosZ);
-		return posToRender;
 	}
 
 	/**

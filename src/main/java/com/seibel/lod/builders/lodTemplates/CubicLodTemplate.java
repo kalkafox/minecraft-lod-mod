@@ -48,12 +48,9 @@ public class CubicLodTemplate extends AbstractLodTemplate
 
 	@Override
 	public void addLodToBuffer(BufferBuilder buffer, BlockPos playerBlockPos, short[] data, short[][] adjData,
-	                           int[] levelPos, DebugMode debugging)
+	                           byte detailLevel, int posX, int posZ,DebugMode debugging)
 	{
 		AxisAlignedBB bbox;
-		byte detailLevel = LevelPosUtil.getDetailLevel(levelPos);
-		int posX = LevelPosUtil.getPosX(levelPos);
-		int posZ = LevelPosUtil.getPosZ(levelPos);
 		int width = 1 << detailLevel;
 
 		// add each LOD for the detail level

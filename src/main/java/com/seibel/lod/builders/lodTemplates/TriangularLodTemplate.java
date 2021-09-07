@@ -33,7 +33,7 @@ public class TriangularLodTemplate extends AbstractLodTemplate
 {
 	@Override
 	public void addLodToBuffer(BufferBuilder buffer, BlockPos playerBlockPos, short[] data, short[][] adjData,
-	                           int[] levelPos, DebugMode debugging)
+	                           byte detailLevel, int posX, int posZ,DebugMode debugging)
 	{
 		System.err.println("DynamicLodTemplate not implemented!");
 	}

@@ -509,20 +509,18 @@ public class LodDimension
 	 *
 	 * @return list of nodes
 	 */
-	public PosToRenderContainer getDataToRender(RegionPos regionPos, int playerPosX, int playerPosZ)
+	public void getDataToRender(PosToRenderContainer posToRender, RegionPos regionPos, int playerPosX, int playerPosZ)
 	{
 		try
 		{
 			LodRegion region = getRegion(regionPos.x, regionPos.z);
-			return region.getDataToRender( playerPosX, playerPosZ);
+			region.getDataToRender(posToRender, playerPosX, playerPosZ);
 		} catch (NullPointerException e)
 		{
 			//e.printStackTrace();
-			return new PosToRenderContainer(LodUtil.REGION_DETAIL_LEVEL);
 		} catch (Exception e)
 		{
 			//e.printStackTrace();
-			return new PosToRenderContainer(LodUtil.REGION_DETAIL_LEVEL);
 		}
 	}
 
