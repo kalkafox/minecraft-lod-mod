@@ -223,8 +223,8 @@ public class LodBufferBuilder
 								int chunkXdist;
 								int chunkZdist;
 								short gameChunkRenderDistance = (short) (renderer.vanillaRenderedChunks.length / 2 - 1);
-								short[] lodData;
-								short[][] adjData;
+								long lodData;
+								long[] adjData;
 								for (int index = 0; index < posToRender.getNumberOfPos(); index++)
 								{
 									detailLevel = posToRender.getNthDetailLevel(index);
@@ -247,7 +247,7 @@ public class LodBufferBuilder
 										if (lodDim.doesDataExist(detailLevel, posX, posZ))
 										{
 											lodData = lodDim.getData(detailLevel, posX, posZ);
-											adjData = new short[NUMBER_OF_DIRECTION][];
+											adjData = new long[NUMBER_OF_DIRECTION];
 											for (int direction = 0; direction < NUMBER_OF_DIRECTION; direction++)
 											{
 												xAdj = posX + ADJ_DIRECTION[direction][0];

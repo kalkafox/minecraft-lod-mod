@@ -47,7 +47,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 	}
 
 	@Override
-	public void addLodToBuffer(BufferBuilder buffer, BlockPos playerBlockPos, short[] data, short[][] adjData,
+	public void addLodToBuffer(BufferBuilder buffer, BlockPos playerBlockPos, long data, long[] adjData,
 	                           byte detailLevel, int posX, int posZ,DebugMode debugging)
 	{
 		AxisAlignedBB bbox;
@@ -91,7 +91,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 		return new AxisAlignedBB(0, depth, 0, width, height, width).move(xOffset, yOffset, zOffset);
 	}
 
-	private void addBoundingBoxToBuffer(BufferBuilder buffer, AxisAlignedBB bb, int c, BlockPos playerBlockPos, short[][] adjData)
+	private void addBoundingBoxToBuffer(BufferBuilder buffer, AxisAlignedBB bb, int c, BlockPos playerBlockPos, long[] adjData)
 	{
 		int topColor = c;
 		int bottomColor = c;
@@ -131,7 +131,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 		}
 		int minY;
 		int maxY;
-		short[] data;
+		long data;
 
 		int red;
 		int green;
@@ -172,7 +172,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 			alpha = ColorUtil.getAlpha(westColor);
 			// west (facing -X)
 			data = adjData[0];
-			if (data == null)
+			if (data == 0)
 			{
 				addPosAndColor(buffer, bb.minX, bb.minY, bb.minZ, red, green, blue, alpha);
 				addPosAndColor(buffer, bb.minX, bb.minY, bb.maxZ, red, green, blue, alpha);
@@ -210,7 +210,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 			alpha = ColorUtil.getAlpha(eastColor);
 			// east (facing +X)
 			data = adjData[1];
-			if (data == null)
+			if (data == 0)
 			{
 				addPosAndColor(buffer, bb.maxX, bb.maxY, bb.minZ, red, green, blue, alpha);
 				addPosAndColor(buffer, bb.maxX, bb.maxY, bb.maxZ, red, green, blue, alpha);
@@ -248,7 +248,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 			alpha = ColorUtil.getAlpha(northColor);
 			data = adjData[3];
 			// north (facing +Z)
-			if (data == null)
+			if (data == 0)
 			{
 				addPosAndColor(buffer, bb.maxX, bb.minY, bb.maxZ, red, green, blue, alpha);
 				addPosAndColor(buffer, bb.maxX, bb.maxY, bb.maxZ, red, green, blue, alpha);
@@ -286,7 +286,7 @@ public class CubicLodTemplate extends AbstractLodTemplate
 			alpha = ColorUtil.getAlpha(southColor);
 			data = adjData[2];
 			// south (facing -Z)
-			if (data == null)
+			if (data == 0)
 			{
 				addPosAndColor(buffer, bb.minX, bb.minY, bb.minZ, red, green, blue, alpha);
 				addPosAndColor(buffer, bb.minX, bb.maxY, bb.minZ, red, green, blue, alpha);

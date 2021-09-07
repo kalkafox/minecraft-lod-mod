@@ -435,7 +435,7 @@ public class LodDimension
 	 * stored in the LOD. If an LOD already exists at the given
 	 * coordinates it will be overwritten.
 	 */
-	public synchronized Boolean addData(byte detailLevel, int posX, int posZ, short[] lodDataPoint, boolean dontSave, boolean serverQuality)
+	public synchronized Boolean addData(byte detailLevel, int posX, int posZ, long lodDataPoint, boolean dontSave, boolean serverQuality)
 	{
 
 		// don't continue if the region can't be saved
@@ -531,7 +531,7 @@ public class LodDimension
 	 * Returns null if the LodChunk doesn't exist or
 	 * is outside the loaded area.
 	 */
-	public short[] getData(byte detailLevel, int posX, int posZ)
+	public long getData(byte detailLevel, int posX, int posZ)
 	{
 		if (detailLevel > LodUtil.REGION_DETAIL_LEVEL)
 			throw new IllegalArgumentException("getLodFromCoordinates given a level of \"" + detailLevel + "\" when \"" + LodUtil.REGION_DETAIL_LEVEL + "\" is the max.");
@@ -542,14 +542,14 @@ public class LodDimension
 
 			if (region == null)
 			{
-				return null;
+				return 0;
 			}
 
 			return region.getData(detailLevel, posX, posZ);
 
 		} catch (Exception e)
 		{
-			return null;
+			return 0;
 		}
 	}
 

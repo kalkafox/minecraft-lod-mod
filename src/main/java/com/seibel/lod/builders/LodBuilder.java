@@ -173,7 +173,7 @@ public class LodBuilder
 		short[] color;
 		short height;
 		short depth;
-		short[] data;
+		long data;
 		try
 		{
 			LodDetail detail = null;
