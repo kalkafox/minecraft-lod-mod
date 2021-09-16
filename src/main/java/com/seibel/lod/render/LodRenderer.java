@@ -575,10 +575,12 @@ public class LodRenderer
 
 		float sunBrightness = lodDimension.dimension.hasSkyLight() ? mc.getSkyDarken(partialTicks) : 0.2f;
 		sunBrightness = playerHasNightVision ? 1.0f : sunBrightness;
-		float gammaMultiplyer = (float) mc.getOptions().gamma - 0.5f;
-		float lightStrength = ((sunBrightness / 2f) - 0.2f) + (gammaMultiplyer * 0.3f);
+		float gamma = (float) mc.getOptions().gamma - 0.0f;
+		float dayEffect = (sunBrightness - 0.2f) * 1.25f;
+		float lightStrength = (gamma * 0.2f + 0.35f) * (1.0f - dayEffect) + dayEffect - 0.6f; //gamma * 0.2980392157f + 0.1647058824f
+		float blueLightStrength = (gamma * 0.4f + 0.5f) * (1.0f - dayEffect) + dayEffect - 0.6f; //gamma * 0.4235294118f + 0.2784313725f
 
-		float lightAmbient[] = {lightStrength, lightStrength, lightStrength, 1.0f};
+		float lightAmbient[] = {lightStrength, lightStrength, blueLightStrength, 1.0f};
 
 		// can be used for debugging
 		//		if (partialTicks < 0.005)
