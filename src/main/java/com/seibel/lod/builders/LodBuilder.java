@@ -241,7 +241,7 @@ public class LodBuilder
 					case MULTI_LOD:
 						long[] dataToMergeVertical;
 						dataToMergeVertical = createVerticalDataToMerge(detail, chunk, config, startX, startZ, endX, endZ);
-						data = DataPointUtil.mergeMultiData(dataToMergeVertical, detailLevel);
+						data = DataPointUtil.mergeMultiData(dataToMergeVertical, DetailDistanceUtil.getMaxVerticalData(detailLevel), DetailDistanceUtil.getMaxVerticalData(detailLevel + 1));
 						if (data.length == 0 || data == null)
 							data = new long[]{DataPointUtil.EMPTY_DATA};
 						//lodDim.clear(detailLevel, posX, posZ);
