@@ -436,10 +436,6 @@ public class DataPointUtil
 				for (int dataIndex = 0; dataIndex < inputVerticalData; dataIndex++)
 				{
 					singleData = dataToMerge[index * inputVerticalData + dataIndex];
-					if (getHeight(singleData) > 255)
-					{
-						ClientProxy.LOGGER.info("height: " + getHeight(singleData));
-					}
 					if (doesItExist(singleData) && !isVoid(singleData) && getVerticalLevel(singleData) == level
 							&& ((depth <= getDepth(singleData) && getDepth(singleData) <= height)
 							|| (depth <= getHeight(singleData) && getHeight(singleData) <= height))
@@ -448,7 +444,11 @@ public class DataPointUtil
 				}
 			}
 			long data = mergeSingleData(singleDataToMerge);
-			
+
+			if (height > 255)
+			{
+				ClientProxy.LOGGER.info("height: " + height);
+			}
 			dataPoint[count - j - 1] = createDataPoint(height, depth, getColor(data), getLightSky(data), getLightBlock(data), getGenerationMode(data), getVerticalLevel(data));
 		}
 		return dataPoint;
