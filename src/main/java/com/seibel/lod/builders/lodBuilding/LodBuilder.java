@@ -348,9 +348,12 @@ public class LodBuilder
 				}
 				lightBlock = light & 0b1111;
 				lightSky = (light >> 4) & 0b1111;
-				
-				
-				dataToMerge[index * verticalData + count] = DataPointUtil.createDataPoint(height, depth, color, lightSky, lightBlock, generation);
+
+				int level = 0;
+				if ((color >>> 24) < 255) level = 1;
+				if (color >>> 24 < 127) level = 2;
+				if (color >>> 24 < 63) level = 3;
+				dataToMerge[index * verticalData + count] = DataPointUtil.createDataPoint(height, depth, color, lightSky, lightBlock, generation, level);
 				topBlock = false;
 				yAbs = depth - 1;
 				count++;
@@ -491,7 +494,7 @@ public class LodBuilder
 			
 			
 			lightSky = DEFAULT_MAX_LIGHT;
-			dataToMerge[index] = DataPointUtil.createDataPoint(height, depth, color, lightSky, lightBlock, generation);
+			dataToMerge[index] = DataPointUtil.createDataPoint(height, depth, color, lightSky, lightBlock, generation, 0);
 		}
 		return dataToMerge;
 	}

@@ -1,8 +1,10 @@
 package com.seibel.lod.util;
 
 import com.seibel.lod.enums.DistanceGenerationMode;
-
+import com.seibel.lod.proxy.ClientProxy;
 import net.minecraft.client.renderer.texture.NativeImage;
+
+import java.util.Arrays;
 
 public class DataPointUtil
 {
@@ -55,7 +57,7 @@ public class DataPointUtil
 	public final static int BLOCK_LIGHT_SHIFT = 12;
 	public final static int SKY_LIGHT_SHIFT = 8;
 	//public final static int LIGHTS_SHIFT = SKY_LIGHT_SHIFT;
-	//public final static int VERTICAL_INDEX_SHIFT = 6;
+	public final static int VERTICAL_INDEX_SHIFT = 6;
 	//public final static int FLAG_SHIFT = 5;
 	public final static int GEN_TYPE_SHIFT = 2;
 	public final static int VOID_SHIFT = 1;
@@ -71,7 +73,7 @@ public class DataPointUtil
 	//public final static long LIGHTS_MASK = 0b1111_1111;
 	public final static long BLOCK_LIGHT_MASK = 0b1111;
 	public final static long SKY_LIGHT_MASK = 0b1111;
-	//public final static long VERTICAL_INDEX_MASK = 0b11;
+	public final static long VERTICAL_INDEX_MASK = 0b11;
 	//public final static long FLAG_MASK = 0b1;
 	public final static long GEN_TYPE_MASK = 0b111;
 	public final static long VOID_MASK = 1;
@@ -87,17 +89,17 @@ public class DataPointUtil
 		return dataPoint;
 	}
 	
-	public static long createDataPoint(int height, int depth, int color, int lightSky, int lightBlock, int generationMode)
+	public static long createDataPoint(int height, int depth, int color, int lightSky, int lightBlock, int generationMode, int level)
 	{
 		return createDataPoint(
 				ColorUtil.getAlpha(color),
 				ColorUtil.getRed(color),
 				ColorUtil.getGreen(color),
 				ColorUtil.getBlue(color),
-				height, depth, lightSky, lightBlock, generationMode);
+				height, depth, lightSky, lightBlock, generationMode, level);
 	}
 	
-	public static long createDataPoint(int alpha, int red, int green, int blue, int height, int depth, int lightSky, int lightBlock, int generationMode)
+	public static long createDataPoint(int alpha, int red, int green, int blue, int height, int depth, int lightSky, int lightBlock, int generationMode, int level)
 	{
 		long dataPoint = 0;
 		dataPoint += (long) (alpha >>> ALPHA_DOWNSIZE_SHIFT) << ALPHA_SHIFT;
@@ -109,6 +111,7 @@ public class DataPointUtil
 		dataPoint += (lightBlock & BLOCK_LIGHT_MASK) << BLOCK_LIGHT_SHIFT;
 		dataPoint += (lightSky & SKY_LIGHT_MASK) << SKY_LIGHT_SHIFT;
 		dataPoint += (generationMode & GEN_TYPE_MASK) << GEN_TYPE_SHIFT;
+		dataPoint += (level & VERTICAL_INDEX_MASK) << VERTICAL_INDEX_SHIFT;
 		dataPoint += EXISTENCE_MASK << EXISTENCE_SHIFT;
 		return dataPoint;
 	}
@@ -186,6 +189,11 @@ public class DataPointUtil
 		
 		return ColorUtil.multiplyRGBcolors(getColor(dataPoint), ColorUtil.rgbToInt(red, green, blue));
 	}
+
+	public static byte getVerticalLevel(long dataPoint)
+	{
+		return (byte) ((dataPoint >> VERTICAL_INDEX_SHIFT) & VERTICAL_INDEX_MASK);
+	}
 	
 	public static String toString(long dataPoint)
 	{
@@ -227,6 +235,7 @@ public class DataPointUtil
 		int tempDepth = Integer.MAX_VALUE;
 		int tempLightBlock = 0;
 		int tempLightSky = 0;
+		int tempLevel = 3;
 		byte tempGenMode = DistanceGenerationMode.SERVER.complexity;
 		boolean allEmpty = true;
 		boolean allVoid = true;
@@ -247,6 +256,7 @@ public class DataPointUtil
 					tempDepth = Math.min(tempDepth, DataPointUtil.getDepth(data));
 					tempLightBlock += DataPointUtil.getLightBlock(data);
 					tempLightSky += DataPointUtil.getLightSky(data);
+					if (tempLevel > DataPointUtil.getVerticalLevel(data)) tempLevel = DataPointUtil.getVerticalLevel(data);
 				}
 				tempGenMode = (byte) Math.min(tempGenMode, DataPointUtil.getGenerationMode(data));
 			} else
@@ -272,17 +282,18 @@ public class DataPointUtil
 			tempBlue = tempBlue / numberOfChildren;
 			tempLightBlock = tempLightBlock / numberOfChildren;
 			tempLightSky = tempLightSky / numberOfChildren;
-			return DataPointUtil.createDataPoint(tempAlpha, tempRed, tempGreen, tempBlue, tempHeight, tempDepth, tempLightSky, tempLightBlock, tempGenMode);
+			return DataPointUtil.createDataPoint(tempAlpha, tempRed, tempGreen, tempBlue, tempHeight, tempDepth, tempLightSky, tempLightBlock, tempGenMode, tempLevel);
 		}
 	}
 	
 	public static long[] mergeMultiData(long[] dataToMerge, int inputVerticalData, int maxVerticalData)
 	{
 		int size = dataToMerge.length / inputVerticalData;
-		
+		int levelOffset = worldHeight / 16 + 1;
+
 		// We initialize the arrays that are going to be used
-		short[] projection = ThreadMapUtil.getProjectionArray((worldHeight) / 16 + 1);
-		short[] heightAndDepth = ThreadMapUtil.getHeightAndDepth((worldHeight + 1) * 2);
+		short[] projection = ThreadMapUtil.getProjectionArray(levelOffset * 4);
+		short[] heightAndDepth = ThreadMapUtil.getHeightAndDepth((worldHeight + 1) * 3);
 		long[] singleDataToMerge = ThreadMapUtil.getSingleAddDataToMerge(size);
 		long[] dataPoint = ThreadMapUtil.getVerticalDataArray(worldHeight + 1);
 		
@@ -311,8 +322,12 @@ public class DataPointUtil
 						allVoid = false;
 						depth = getDepth(singleData);
 						height = getHeight(singleData);
+						if (getHeight(singleData) > 255)
+						{
+							ClientProxy.LOGGER.info("height p1: " + getHeight(singleData));
+						}
 						for (int y = depth; y <= height; y++)
-							projection[y / 16] |= 1 << (y & 0xf);
+							projection[y / 16 + levelOffset * getVerticalLevel(singleData)] |= 1 << (y & 0xf);
 					}
 				}
 			}
@@ -331,11 +346,17 @@ public class DataPointUtil
 		int count = 0;
 		int i = 0;
 		int ii = 0;
+		short level = 0;
 		while (i < projection.length)
 		{
-			while (i < projection.length && projection[i] == 0) i++;
+			while (i < projection.length && projection[i] == 0 && i < levelOffset * (level + 1)) i++;
 			if (i == projection.length)
 				break; //we reached end of WORLD_HEIGHT and it's nothing more here
+			if (i == levelOffset * (level + 1))
+			{
+				level++;
+				continue;
+			}
 			while (ii < 15 && ((projection[i] >>> ii) & 1) == 0) ii++;
 			if (ii >= 15 && ((projection[i] >>> ii) & 1) == 0) //there is nothing more in this chunk
 			{
@@ -343,25 +364,28 @@ public class DataPointUtil
 				i++;
 				continue;
 			}
-			depth = (short) (i * 16 + ii);
+			depth = (short) ((i - level * levelOffset) * 16 + ii);
 			
 			while (ii < 15 && ((projection[i] >>> ii) & 1) == 1) ii++;
 			if (ii >= 15 && ((projection[i] >>> ii) & 1) == 1) //if end is not in this chunk
 			{
 				ii = 0;
 				i++;
-				while (i < projection.length && ~(projection[i]) == 0) i++; //check for big solid blocks
-				if (i == projection.length) //solid to WORLD_HEIGHT
+				while (i < projection.length && ~(projection[i]) == 0 && i < levelOffset * (level + 1)) i++; //check for big solid blocks
+				if (i == projection.length || i == levelOffset * (level + 1)) //solid to WORLD_HEIGHT
 				{
-					heightAndDepth[count * 2] = depth;
-					heightAndDepth[count * 2 + 1] = (short) (worldHeight - 1);
+					heightAndDepth[count * 3] = depth;
+					heightAndDepth[count * 3 + 1] = (short) (worldHeight - 1);
+					heightAndDepth[count * 3 + 2] = level;
+					count++;
 					break;
 				}
 				while ((((projection[i] >>> ii) & 1) == 1)) ii++;
 			}
 			height = (short) (i * 16 + ii - 1);
-			heightAndDepth[count * 2] = depth;
-			heightAndDepth[count * 2 + 1] = height;
+			heightAndDepth[count * 3] = depth;
+			heightAndDepth[count * 3 + 1] = height;
+			heightAndDepth[count * 3 + 2] = level;
 			count++;
 		}
 		
@@ -372,53 +396,60 @@ public class DataPointUtil
 			ii = worldHeight;
 			for (i = 0; i < count - 1; i++)
 			{
-				if (heightAndDepth[(i + 1) * 2] - heightAndDepth[i * 2 + 1] < ii)
+				if (heightAndDepth[(i + 1) * 3] - heightAndDepth[i * 3 + 1] < ii && heightAndDepth[(i + 1) * 3 + 2] == heightAndDepth[i * 3 + 2])
 				{
-					ii = heightAndDepth[(i + 1) * 2] - heightAndDepth[i * 2 + 1];
+					ii = heightAndDepth[(i + 1) * 3] - heightAndDepth[i * 3 + 1];
 					j = i;
 				}
 			}
-			heightAndDepth[j * 2 + 1] = heightAndDepth[(j + 1) * 2 + 1];
+			if (ii == worldHeight) //all gaps are between different levels
+			{
+				for (i = 0; i < count - 1; i++)
+				{
+					if (heightAndDepth[(i + 1) * 3] - heightAndDepth[i * 3 + 1] < ii)
+					{
+						ii = heightAndDepth[(i + 1) * 3] - heightAndDepth[i * 3 + 1];
+						j = i;
+					}
+				}
+			}
+			heightAndDepth[j * 3 + 1] = heightAndDepth[(j + 1) * 3 + 1]; //by ignoring level we set lower one as new one
 			for (i = j + 1; i < count - 1; i++)
 			{
-				heightAndDepth[i * 2] = heightAndDepth[(i + 1) * 2];
-				heightAndDepth[i * 2 + 1] = heightAndDepth[(i + 1) * 2 + 1];
+				heightAndDepth[i * 3] = heightAndDepth[(i + 1) * 3];
+				heightAndDepth[i * 3 + 1] = heightAndDepth[(i + 1) * 3 + 1];
+				heightAndDepth[i * 3 + 2] = heightAndDepth[(i + 1) * 3 + 2];
 			}
-			//System.arraycopy(heightAndDepth,j + 1, heightAndDepth, j,count - j - 1);
 			count--;
 		}
 		//As standard the vertical lods are ordered from top to bottom
 		for (j = 0; j < count; j++)
 		{
-			depth = heightAndDepth[j * 2];
-			height = heightAndDepth[j * 2 + 1];
-			if ((depth == 0 && height == 0) || j >= heightAndDepth.length / 2)
+			depth = heightAndDepth[j * 3];
+			height = heightAndDepth[j * 3 + 1];
+			level = heightAndDepth[j * 3 + 2];
+			if ((depth == 0 && height == 0) || j >= heightAndDepth.length / 3)
 				break;
-			for (int k = 0; k < size; k++)
-			{
-				singleDataToMerge[k] = 0;
-			}
+			Arrays.fill(singleDataToMerge, 0);
 			for (int index = 0; index < size; index++)
 			{
 				for (int dataIndex = 0; dataIndex < inputVerticalData; dataIndex++)
 				{
 					singleData = dataToMerge[index * inputVerticalData + dataIndex];
-					if (doesItExist(singleData) && !isVoid(singleData))
+					if (getHeight(singleData) > 255)
 					{
-						if ((depth <= getDepth(singleData) && getDepth(singleData) <= height)
-								|| (depth <= getHeight(singleData) && getHeight(singleData) <= height))
-						{
-							if (getHeight(singleData) > getHeight(singleDataToMerge[index]))
-							{
-								singleDataToMerge[index] = singleData;
-							}
-						}
+						ClientProxy.LOGGER.info("height: " + getHeight(singleData));
 					}
+					if (doesItExist(singleData) && !isVoid(singleData) && getVerticalLevel(singleData) == level
+							&& ((depth <= getDepth(singleData) && getDepth(singleData) <= height)
+							|| (depth <= getHeight(singleData) && getHeight(singleData) <= height))
+							&& getHeight(singleData) > getHeight(singleDataToMerge[index]))
+						singleDataToMerge[index] = singleData;
 				}
 			}
 			long data = mergeSingleData(singleDataToMerge);
 			
-			dataPoint[count - j - 1] = createDataPoint(height, depth, getColor(data), getLightSky(data), getLightBlock(data), getGenerationMode(data));
+			dataPoint[count - j - 1] = createDataPoint(height, depth, getColor(data), getLightSky(data), getLightBlock(data), getGenerationMode(data), getVerticalLevel(data));
 		}
 		return dataPoint;
 	}
