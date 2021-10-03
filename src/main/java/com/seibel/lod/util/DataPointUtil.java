@@ -322,10 +322,6 @@ public class DataPointUtil
 						allVoid = false;
 						depth = getDepth(singleData);
 						height = getHeight(singleData);
-						if (getHeight(singleData) > 255)
-						{
-							ClientProxy.LOGGER.info("height p1: " + getHeight(singleData));
-						}
 						for (int y = depth; y <= height; y++)
 							projection[y / 16 + levelOffset * getVerticalLevel(singleData)] |= 1 << (y & 0xf);
 					}
@@ -382,7 +378,7 @@ public class DataPointUtil
 				}
 				while ((((projection[i] >>> ii) & 1) == 1)) ii++;
 			}
-			height = (short) (i * 16 + ii - 1);
+			height = (short) ((i - level * levelOffset) * 16 + ii - 1);
 			heightAndDepth[count * 3] = depth;
 			heightAndDepth[count * 3 + 1] = height;
 			heightAndDepth[count * 3 + 2] = level;
@@ -449,7 +445,7 @@ public class DataPointUtil
 			{
 				ClientProxy.LOGGER.info("height: " + height);
 			}
-			dataPoint[count - j - 1] = createDataPoint(height, depth, getColor(data), getLightSky(data), getLightBlock(data), getGenerationMode(data), getVerticalLevel(data));
+			dataPoint[count - j - 1] = createDataPoint(height, depth, getColor(data), getLightSky(data), getLightBlock(data), getGenerationMode(data), level);
 		}
 		return dataPoint;
 	}
